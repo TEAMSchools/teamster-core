@@ -1,20 +1,20 @@
 from dagster import op
-from powerschool import PowerSchool, utils
-
-
-@op(required_resource_keys={"google_secret"})
-def hello(context):
-    secret_name = f"projects/624231820004/secrets/spam/versions/1"
-    secret_value = context.resources.google_secret(secret_name)
-    context.log.info(secret_value)
+from powerschool import PowerSchool
 
 
 @op
-def authenticate(context):
+def get_new_auth_token(context):
     return PowerSchool(
         host=context.op_config["hostname"], auth=context.op_config["auth"]
     )
 
+# load auth token
+
+# check auth token validity
+
+# get table count
+
+# get table data
 
 """# save access token to secret
 with token_file_path.open("wt") as f:
