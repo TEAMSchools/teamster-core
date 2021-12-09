@@ -1,110 +1,88 @@
-from dagster import op
-from powerschool import PowerSchool
+from datetime import datetime
+
+from dagster import Any, DynamicOut, DynamicOutput, Field, Noneable, Out, Output, op, config_from_files
+
+from powerschool import utils
 
 
-@op
-def get_new_auth_token(context):
-    return PowerSchool(
-        host=context.op_config["hostname"], auth=context.op_config["auth"]
-    )
+@op(required_resource_keys={"powerschool"})
+def get_client(context):
+    return context.resources.powerschool
 
-# load auth token
 
-# check auth token validity
-
-# get table count
-
-# get table data
-
-"""# save access token to secret
-with token_file_path.open("wt") as f:
-    json.dump(ps.access_token, f)
-    f.truncate()
-
-# for t in tables:
-table_name = t.get("table_name")
-projection = t.get("projection")
-queries = t.get("queries")
-print(table_name)
-
-# create data folder
-file_dir = PROJECT_PATH / "data" / host_clean / table_name
-if not file_dir.exists():
-    file_dir.mkdir(parents=True)
-    print(f"\tCreated {file_dir}...")
-
-# get table
-schema_table = ps.get_schema_table(table_name)
-
-# if there are queries, generate FIQL
-query_params = []
-if queries:
-    selector = queries.get("selector")
-    values = queries.get("values")
-
-    # check if data exists for specified table
-    if not [f for f in file_dir.iterdir()]:
-        # generate historical queries
-        print("\tNo existing data. Generating historical queries...")
-        query_params = utils.generate_historical_queries(
-            current_yearid, selector
+@op(
+    config_schema={"year_id": int, "queries": dict},
+    out=DynamicOut(dict),
+)
+def queries_to_execute(context):
+    queries = context.op_config["queries"]
+    for q in queries:
+        yield DynamicOutput(
+            value=q,
+            mapping_key=q["table_name"],
         )
-        query_params.reverse()
+
+
+@op(config_schema={"q": dict, "year_id": int})
+def compose_query_expression(context):
+    year_id = context.op_config["year_id"]
+    selector = context.op_config["q"]["selector"]
+    value = context.op_config["q"].get("value")
+
+    if not value:
+        value = [utils.transform_yearid(year_id, selector)]
+    elif value == "yesterday":
+        today = datetime.date.today()
+        yesterday = today - datetime.timedelta(days=1)
+        query_expression = f"{selector}=ge={yesterday.isoformat()}"
     else:
-        constraint_rules = utils.get_constraint_rules(selector, current_yearid)
+        constraint_rules = utils.get_constraint_rules(selector, year_id)
+        constraint_values = utils.get_constraint_values(
+            selector, value, constraint_rules["step_size"]
+        )
+        query_expression = utils.get_query_expression(selector, **constraint_values)
 
-        # if there aren't specified values, transform yearid to value
-        if not values:
-            values = [utils.transform_yearid(current_yearid, selector)]
+    return query_expression
 
-        # for each value, get query expression
-        for v in values:
-            if v == "yesterday":
-                today = datetime.date.today()
-                yesterday = today - datetime.timedelta(days=1)
-                expression = f"{selector}=ge={yesterday.isoformat()}"
-            else:
-                constraint_values = utils.get_constraint_values(
-                    selector, v, constraint_rules["step_size"]
-                )
-                expression = utils.get_query_expression(
-                    selector, **constraint_values
-                )
 
-            query_params.append(expression)
-else:
-    query_params.append({})
+# # check if data exists for specified table
+# if not [f for f in file_dir.iterdir()]:
+#     # generate historical queries
+#     print("\tNo existing data. Generating historical queries...")
+#     query_params = utils.generate_historical_queries(
+#         current_yearid, selector
+#     )
+#     query_params.reverse()
 
-for q in query_params:
-    q_params = {}
-    if q:
-        print(f"\tQuerying {q} ...")
-        q_params["q"] = q
-        file_name = f"{table_name}_{q}.json.gz"
-    else:
-        print("\tQuerying all records...")
-        file_name = f"{table_name}.json.gz"
-    
-    file_path = file_dir / file_name
 
-    count = schema_table.count(**q_params)
-    print(f"\t\tFound {count} records!")
+@op(config_schema={"table_name": str})
+def get_table(context, client):
+    return client.get_schema_table(context.op_config["table_name"])
 
+
+@op(
+    config_schema={"q": Field(str, is_required=False)},
+    out={
+        "positive_count": Out(is_required=False),
+        "zero_count": Out(is_required=False),
+    },
+)
+def query_count(context, table):
+    count = table.count(q=context.op_config["q"])
     if count > 0:
-        if projection:
-            q_params["projection"] = projection
+        yield Output(table, "positive_count")
+    else:
+        yield Output(None, "zero_count")
 
-        data = schema_table.query(**q_params)
 
-        # save as json.gz
-        with gzip.open(file_path, "wt", encoding="utf-8") as f:
-            json.dump(data, f)
-        print(f"\t\tSaved to {file_path}!")
-
-        # upload to GCS
-        file_path_parts = file_path.parts
-        destination_blob_name = f"powerschool/{'/'.join(file_path_parts[file_path_parts.index('data') + 1:])}"
-        blob = gcs_bucket.blob(destination_blob_name)
-        blob.upload_from_filename(file_path)
-        print(f"\t\tUploaded to {blob.public_url}!")
-"""
+@op(
+    config_schema={
+        "q": Field(str, is_required=False),
+        "projection": Field(str, is_required=False),
+    }
+)
+def query_data(context, table):
+    data = table.query(
+        q=context.op_config["q"], projection=context.op_config["projection"]
+    )
+    return data

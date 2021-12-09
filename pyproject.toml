@@ -9,7 +9,7 @@ dependencies = [
     "dagster~=0.13",
     "dagit~=0.13",
     "requests~=2.26",
-    "powerschool~=2.0",
+    "powerschool~=3.0",
     "python-dotenv~=0.19",
     "google-cloud-secret-manager~=2.8",
 ]

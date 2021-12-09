@@ -46,7 +46,7 @@ def update_latest_secret(context):
 
 # create secret
 @op(required_resource_keys={"secret_manager"}, config_schema={"secret_name": str})
-def access_latest_secret(context):
+def create_new_secret(context):
     secret_project_path = context.resources.secret_manager.common_project_path(
         project_id=context.resources.secret_manager.transport._credentials.project_id,
     )
