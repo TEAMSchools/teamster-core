@@ -1,0 +1,16 @@
+---
+ops:
+  query_spooler:
+***REMOVED***
+      year_id: 31
+      tables:
+      - name: schools
+      - name: students
+        projection: student_number,lastfirst
+      - name: cc
+        queries:
+          - selector: termid
+            value: -3100
+      - name: log
+        queries:
+          - selector: entry_date
