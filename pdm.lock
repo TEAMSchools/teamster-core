@@ -104,7 +104,7 @@ dependencies = [
 
 [[package]]
 name = "dagit"
-version = "0.13.10"
+version = "0.13.11"
 summary = "Web UI for dagster."
 dependencies = [
     "Flask-GraphQL>=2.0.0",
@@ -112,8 +112,8 @@ dependencies = [
     "PyYAML",
     "Werkzeug<2.0.0",
     "click<9.0,>=7.0",
-    "dagster-graphql==0.13.10",
-    "dagster==0.13.10",
+    "dagster-graphql==0.13.11",
+    "dagster==0.13.11",
     "flask-cors>=3.0.6",
     "flask<2.0.0,>=0.12.4",
     "gevent",
@@ -126,7 +126,7 @@ dependencies = [
 
 [[package]]
 name = "dagster"
-version = "0.13.10"
+version = "0.13.11"
 summary = "A data orchestrator for machine learning, analytics, and ETL."
 dependencies = [
     "Jinja2<3.0",
@@ -156,10 +156,10 @@ dependencies = [
 
 [[package]]
 name = "dagster-graphql"
-version = "0.13.10"
+version = "0.13.11"
 summary = "The GraphQL frontend to python dagster."
 dependencies = [
-    "dagster==0.13.10",
+    "dagster==0.13.11",
     "gevent",
     "gevent-websocket>=0.10.1",
     "gql<3",
@@ -273,7 +273,7 @@ extras = ["grpc"]
 requires_python = ">=3.6"
 summary = "Google API client core library"
 dependencies = [
-    "google-api-core==2.3.0",
+    "google-api-core<3.0.0dev,>=1.28.0",
     "google-auth<3.0dev,>=1.25.0",
     "googleapis-common-protos<2.0dev,>=1.52.0",
     "grpcio-status<2.0dev,>=1.33.2",
@@ -324,7 +324,7 @@ extras = ["grpc"]
 requires_python = ">=3.6"
 summary = "Common protobufs used in Google APIs"
 dependencies = [
-    "googleapis-common-protos==1.54.0",
+    "googleapis-common-protos<2.0.0dev,>=1.5.2",
     "grpcio>=1.0.0",
     "protobuf>=3.12.0",
 ]
@@ -609,7 +609,7 @@ summary = "A small Python module for determining appropriate platform-specific d
 
 [[package]]
 name = "powerschool"
-version = "3.0.0"
+version = "3.0.1"
 requires_python = ">=3.6.2,<4.0.0"
 summary = "powerschool is a Python client for the PowerSchool API"
 dependencies = [
@@ -997,17 +997,17 @@ content_hash = "sha256:c864b55205c9d75d2694f3485371ba207ae8eeb484fa7e5a69d7d0bb0
     {file = "croniter-1.1.0-py2.py3-none-any.whl", hash = "sha256:d30dd147d1daec39d015a15b8cceb3069b9780291b9c141e869c32574a8eeacb"},
     {file = "croniter-1.1.0.tar.gz", hash = "sha256:4023e4d18ced979332369964351e8f4f608c1f7c763e146b1d740002c4245247"},
 ]
-"dagit 0.13.10" = [
-    {file = "dagit-0.13.10-py3-none-any.whl", hash = "sha256:039cb9fcb5781fbae3b7e6eb365ff2ca50636b3ad2d6cb358a152501011a8f8e"},
-    {file = "dagit-0.13.10.tar.gz", hash = "sha256:f02eb4de1692f3664dc909e2196b0fa387863293c938dc5d390ae282b0731cc4"},
+"dagit 0.13.11" = [
+    {file = "dagit-0.13.11-py3-none-any.whl", hash = "sha256:df130ad5f220a9c0144ff3b61fc900e7f105289a7a54c6b12a22768e75fcfdae"},
+    {file = "dagit-0.13.11.tar.gz", hash = "sha256:ede459e5e33baaf474c7f20a8544994860f2c00beb7a882e57f44990d2950f96"},
 ]
-"dagster 0.13.10" = [
-    {file = "dagster-0.13.10-py3-none-any.whl", hash = "sha256:bb6a5230de48d356524657064c2f3d2ff98a0d59acf7d34f0d6c489fd7864ffd"},
-    {file = "dagster-0.13.10.tar.gz", hash = "sha256:d4f51e70b9d2f16ff222ca582e267a6024a57747fec55b416e9eb33bfc524232"},
+"dagster 0.13.11" = [
+    {file = "dagster-0.13.11-py3-none-any.whl", hash = "sha256:149c35f4ed6a00c7234850648e94044b6f0cabbe7f7b4d35a64a4314e554c827"},
+    {file = "dagster-0.13.11.tar.gz", hash = "sha256:156feb258b6b7e9a7696c4d28c0ef7b373744deb96d3008374db8ac398f15aa7"},
 ]
-"dagster-graphql 0.13.10" = [
-    {file = "dagster_graphql-0.13.10-py3-none-any.whl", hash = "sha256:2eda94a917838dda9d355bcf0689a2f4cbbcca8553614e5d7107c9151e923db8"},
-    {file = "dagster-graphql-0.13.10.tar.gz", hash = "sha256:5a590366c28f800e34092ac61349ec5887c816f9acef82e25e393e4ae9aeddf6"},
+"dagster-graphql 0.13.11" = [
+    {file = "dagster_graphql-0.13.11-py3-none-any.whl", hash = "sha256:6abc79f1f91c5736385fc8e14db2f4ea6608d5d2eddb665185f6c3d6b0431a03"},
+    {file = "dagster-graphql-0.13.11.tar.gz", hash = "sha256:56cb8613697ddd691a72cef959ae1c7586ad23b7cbc86c24d57b2ffd2fa17f89"},
 ]
 "defusedxml 0.7.1" = [
     {file = "defusedxml-0.7.1-py2.py3-none-any.whl", hash = "sha256:a352e7e428770286cc899e2542b6cdaedb2b4953ff269a210103ec58f6198a61"},
@@ -1388,9 +1388,9 @@ content_hash = "sha256:c864b55205c9d75d2694f3485371ba207ae8eeb484fa7e5a69d7d0bb0
     {file = "platformdirs-2.4.0-py3-none-any.whl", hash = "sha256:8868bbe3c3c80d42f20156f22e7131d2fb321f5bc86a2a345375c6481a67021d"},
     {file = "platformdirs-2.4.0.tar.gz", hash = "sha256:367a5e80b3d04d2428ffa76d33f124cf11e8fff2acdaa9b43d545f5c7d661ef2"},
 ]
-"powerschool 3.0.0" = [
-    {file = "powerschool-3.0.0-py3-none-any.whl", hash = "sha256:78cb30c31f059d6125e24be2bc74e8ea7496f5f9ec127e9e68835d9b7a6db4e2"},
-    {file = "powerschool-3.0.0.tar.gz", hash = "sha256:c4d5a6cd3f4c987fb9284b3da94ae5d03f9c09f4608bd55d5020da63e24b959a"},
+"powerschool 3.0.1" = [
+    {file = "powerschool-3.0.1-py3-none-any.whl", hash = "sha256:3edb3f45ad499c2c76c17cf476a18d136fa155f0e158a29e84d3f817119cd9fe"},
+    {file = "powerschool-3.0.1.tar.gz", hash = "sha256:a6e69547254c8fcfacf5cf0a6c53efe93ab541fec7d7d5e61d05cd9584ed6c48"},
 ]
 "promise 2.3" = [
     {file = "promise-2.3.tar.gz", hash = "sha256:dfd18337c523ba4b6a58801c164c1904a9d4d1b1747c7d5dbf45b693a49d93d0"},
