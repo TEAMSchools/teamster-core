@@ -1,0 +1,9 @@
+`resource.yaml`
+```yaml
+***REMOVED***
+***REMOVED***
+***REMOVED***
+      host: 
+      client_id: 
+      client_secret:
+```
