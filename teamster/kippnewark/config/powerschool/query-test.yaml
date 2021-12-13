@@ -8,9 +8,9 @@ ops:
       - name: students
         projection: student_number,lastfirst
       - name: cc
-        queries:
+        q:
           - selector: termid
             value: -3100
       - name: log
-        queries:
+        q:
           - selector: entry_date

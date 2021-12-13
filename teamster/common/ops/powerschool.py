@@ -1,6 +1,4 @@
-from datetime import datetime
-
-from dagster import DynamicOut, DynamicOutput, Field, Noneable, Out, Output, op
+from dagster import DynamicOut, DynamicOutput, Out, Output, op
 
 from powerschool import utils
 
@@ -20,7 +18,7 @@ def query_spooler(context, client):
 
     for i, t in enumerate(tables):
         table_name = t["name"]
-        queries = t.get("queries", [{}])
+        queries = t.get("q", [{}])
         projection = t.get("projection")
 
         for x, q in enumerate(queries):
@@ -42,12 +40,13 @@ def query_spooler(context, client):
 @op
 def compose_query_expression(context, table_query):
     year_id = table_query["year_id"]
+    q = table_query["q"]
 
-    if not table_query["q"]:
+    if not q:
         query_expression = None
     else:
-        selector = table_query["q"].get("selector")
-        value = table_query["q"].get("value", utils.transform_yearid(year_id, selector))
+        selector = q.get("selector")
+        value = q.get("value", utils.transform_yearid(year_id, selector))
 
         constraint_rules = utils.get_constraint_rules(selector, year_id)
         constraint_values = utils.get_constraint_values(
