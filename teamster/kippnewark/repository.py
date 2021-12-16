@@ -1,10 +1,10 @@
 from dagster import repository
 
-from kippnewark.jobs.powerschool import extract_job
+from kippnewark.jobs.powerschool import powerschool_test_extract_job
 
 @repository
 def kippnewark():
-    jobs = [extract_job]
+    jobs = [powerschool_test_extract_job]
     schedules = []
     sensors = []
 

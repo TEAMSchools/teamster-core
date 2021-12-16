@@ -1,6 +1,6 @@
 ---
 ops:
-  query_spooler:
+  compose_queries:
     config:
       year_id: 31
       tables:

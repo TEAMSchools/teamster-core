@@ -2,7 +2,6 @@ import json
 
 from dagster import op
 
-
 @op(required_resource_keys={"secret_manager"}, config_schema={"secret_name": str})
 def access_latest_secret(context):
     secret_version_path = context.resources.secret_manager.secret_path(
