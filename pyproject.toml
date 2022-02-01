@@ -31,4 +31,5 @@ build-backend = "pdm.pep517.api"
 [tool.pdm.dev-dependencies]
 dev = [
     "black<22,>=21.11b0",
+    "flake8>=4.0.1",
 ]
