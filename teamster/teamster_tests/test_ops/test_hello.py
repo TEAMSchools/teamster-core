@@ -1,4 +1,4 @@
-from teamster.ops.hello import hello
+from tutorial.ops.hello import hello
 
 
 def test_hello():

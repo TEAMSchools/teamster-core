@@ -1,5 +1,5 @@
-from teamster.ops.hello_cereal import find_highest_calorie_cereal
-from teamster.jobs.hello_cereal_jobs import diamond
+from tutorial.ops.hello_cereal import find_highest_calorie_cereal
+from tutorial.graphs.hello_cereal_jobs import diamond
 
 
 def test_find_highest_calorie_cereal():

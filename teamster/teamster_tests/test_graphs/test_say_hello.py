@@ -1,4 +1,4 @@
-from teamster.graphs.say_hello import say_hello
+from tutorial.graphs.say_hello import say_hello
 
 
 def test_say_hello():
