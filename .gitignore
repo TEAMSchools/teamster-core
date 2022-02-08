@@ -134,4 +134,7 @@ dev/
 archive/
 .bash_secrets
 tmp*/
+history/
+schedules/
+storage/
 resource.yaml
