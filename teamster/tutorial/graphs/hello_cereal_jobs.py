@@ -1,5 +1,5 @@
 from dagster import job
-from tutorial.ops.hello_cereal import (
+from ..ops.hello_cereal import (
     display_results,
     download_cereals,
     download_csv,

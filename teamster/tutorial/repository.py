@@ -1,7 +1,7 @@
 from dagster import repository
 
 # from teamster.graphs.say_hello import say_hello_job
-from tutorial.graphs.hello_cereal_jobs import (
+from .graphs.hello_cereal_jobs import (
     configurable_job,
     diamond,
     hello_cereal_job,

@@ -1,6 +1,6 @@
 from dagster import graph
 
-from common.ops.powerschool import (
+from ..ops.powerschool import (
     compose_queries,
     get_client,
     get_table,
@@ -30,7 +30,7 @@ def powerschool_test_extract():
 
     # if q param, check if destination folder exists
     # if not, generate backfill queries
-    
+
     # save to data lake
 
     # merge into db table
