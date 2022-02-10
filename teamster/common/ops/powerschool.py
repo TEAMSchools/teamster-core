@@ -4,7 +4,7 @@ from powerschool import utils
 
 
 @op(required_resource_keys={"powerschool"})
-def get_client(context):
+def get_ps_client(context):
     return context.resources.powerschool
 
 

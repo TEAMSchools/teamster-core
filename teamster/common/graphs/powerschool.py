@@ -1,8 +1,9 @@
 from dagster import graph
 
+from ..ops.google import save_to_gcs
 from ..ops.powerschool import (
     compose_queries,
-    get_client,
+    get_ps_client,
     get_table,
     query_count,
     query_data,
@@ -12,7 +13,7 @@ from ..ops.powerschool import (
 @graph
 def powerschool_test_extract():
     # instantiate PS client w/ auth (config/powerschool/resource.yaml)
-    ps = get_client()
+    ps = get_ps_client()
 
     # parse queries from run config file (config/powerschool/query-*.yaml)
     # DynamicOutput
@@ -32,5 +33,6 @@ def powerschool_test_extract():
     # if not, generate backfill queries
 
     # save to data lake
+    blob = data.map(save_to_gcs)
 
     # merge into db table
