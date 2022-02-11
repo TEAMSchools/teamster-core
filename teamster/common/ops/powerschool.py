@@ -73,12 +73,18 @@ def query_count(context, query):
         yield Output(None, "no_data")
 
 
-@op(out={"data": Out(is_required=False), "count_error": Out(is_required=False)})
+@op(
+    out={
+        "data": Out(is_required=False, io_manager_key="gcs_io"),
+        "count_error": Out(is_required=False),
+    }
+)
 def query_data(context, query):
     table = query["table"]
     q = query["q"]
     projection = query["projection"]
     count = query["count"]
+    file_stem_components = [table.name, str(q or "")]
 
     data = table.query(q=q, projection=projection)
 
@@ -88,7 +94,7 @@ def query_data(context, query):
         if len_data < updated_count:
             yield Output(None, "count_error")  # TODO: raise exception
     else:
-        yield Output(data, "data")
+        yield Output(value=(data, file_stem_components), output_name="data")
 
 
 # # check if data exists for specified table

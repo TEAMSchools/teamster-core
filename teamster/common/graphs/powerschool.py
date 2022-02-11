@@ -1,6 +1,5 @@
 from dagster import graph
 
-from ..ops.google import save_to_gcs
 from ..ops.powerschool import (
     compose_queries,
     get_ps_client,
@@ -26,13 +25,10 @@ def powerschool_test_extract():
     # get expected record count, end if == 0
     count, no_data = tables.map(query_count)
 
-    # get data
+    # get data and save to data lake
     data, count_error = count.map(query_data)
 
     # if q param, check if destination folder exists
     # if not, generate backfill queries
-
-    # save to data lake
-    blob = data.map(save_to_gcs)
 
     # merge into db table
