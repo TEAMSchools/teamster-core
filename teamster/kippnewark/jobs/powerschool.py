@@ -24,3 +24,32 @@ powerschool_test_extract_job = powerschool_test_extract.to_job(
         ]
     ),
 )
+
+
+"""
+job1 = configurable_graph.to_job(
+    resource_defs={
+        "foo": bar1,
+        "spam": eggs1,
+    },
+    config=config_from_files(
+        [
+            f"./config/resource.yaml",
+            f"./config/queries-1.yaml",
+        ]
+    ),
+)
+
+job2 = configurable_graph.to_job(
+    resource_defs={
+        "foo": bar2,
+        "spam": eggs2,
+    },
+    config=config_from_files(
+        [
+            f"./config/resource.yaml",
+            f"./config/queries-2.yaml",
+        ]
+    ),
+)
+"""
