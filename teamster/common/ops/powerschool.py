@@ -1,5 +1,4 @@
 from dagster import DynamicOut, DynamicOutput, Out, Output, op
-
 from powerschool import utils
 
 
@@ -8,8 +7,11 @@ def get_ps_client(context):
     return context.resources.powerschool
 
 
-@op(config_schema={"year_id": int, "tables": list}, out={"client": DynamicOut()})
-def compose_queries(context, client):
+@op(
+    config_schema={"year_id": int, "tables": list},
+    out={"query": DynamicOut()},
+)
+def compose_queries(context):
     year_id = context.op_config["year_id"]
     tables = context.op_config["tables"]
 
@@ -33,28 +35,33 @@ def compose_queries(context, client):
             else:
                 composed_query = None
 
-            client.table_name = table_name
-            client.composed_query = composed_query
-            client.projection = projection
-
             yield DynamicOutput(
-                value=client,
-                output_name="client",
+                value=(table_name, composed_query, projection),
+                output_name="query",
                 mapping_key=f"{table_name}_{i}_{j}",
             )
 
 
+@op(out={"table_name": Out(), "query": Out(), "projection": Out()})
+def split_dynamic_output(context, dynamic_output):
+    table_name, query, projection = dynamic_output
+
+    yield Output(table_name, "table_name")
+    yield Output(query, "query")
+    yield Output(projection, "projection")
+
+
 @op(out={"table": Out()})
-def get_table(context, client):
-    yield Output(client.get_schema_table(client.table_name), "table")
+def get_table(context, client, table_name):
+    yield Output(client.get_schema_table(table_name), "table")
 
 
-@op(out={"table": Out(is_required=False), "no_data": Out(is_required=False)})
-def query_count(context, table):
-    table.query_count = table.count(q=table.client.composed_query)
+@op(out={"count": Out(is_required=False), "no_data": Out(is_required=False)})
+def query_count(context, table, query):
+    count = table.count(q=query)
 
-    if table.query_count > 0:
-        yield Output(table, "table")
+    if count > 0:
+        yield Output(count, "count")
     else:
         yield Output(None, "no_data")
 
@@ -68,20 +75,21 @@ def query_count(context, table):
         "count_error": Out(is_required=False),
     }
 )
-def query_data(context, table):
-    composed_query = table.client.composed_query
-    projection = table.client.projection
-    file_key_parts = [table.name, str(composed_query or "")]
+def query_data(context, table, query, projection, count):
+    file_key_parts = [table.name, str(query or "")]
+    file_stem = "_".join(filter(None, file_key_parts))
+    file_ext = "json.gz"
+    file_key = f"{file_key_parts[0]}/{file_stem}.{file_ext}"
 
-    data = table.query(q=composed_query, projection=projection)
+    data = table.query(q=query, projection=projection)
 
     len_data = len(data)
-    if len_data < table.query_count:
-        updated_count = table.count(q=composed_query)
+    if len_data < count:
+        updated_count = table.count(q=query)
         if len_data < updated_count:
             yield Output(None, "count_error")  # TODO: raise exception
     else:
-        yield Output(value=(data, file_key_parts), output_name="data")
+        yield Output(value=(data, file_key), output_name="data")
 
 
 # # check if data exists for specified table

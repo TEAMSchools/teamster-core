@@ -1,32 +1,30 @@
 from dagster import graph
 
-from ..ops.powerschool import (
+from teamster.common.ops.powerschool import (
     compose_queries,
-    get_ps_client,
     get_table,
+    get_ps_client,
     query_count,
     query_data,
+    split_dynamic_output,
 )
 
 
 @graph
-def powerschool_test_extract():
-    # instantiate PS client w/ auth (config/powerschool/resource.yaml)
-    ps = get_ps_client()
+def powerschool_extract_graph(client, dynamic_query):
+    # split DynamicOutput
+    table_name, query, projection = split_dynamic_output(dynamic_output=dynamic_query)
 
-    # parse queries from run config file (config/powerschool/query-*.yaml)
-    # DynamicOutput
-    queries = compose_queries(ps)
-
-    # for each query
     # instantiate table object
-    table = queries.map(get_table)
+    table = get_table(client=client, table_name=table_name)
 
-    # get expected record count, end if == 0
-    count, no_data = table.map(query_count)
+    # get expected record count, end if 0
+    count, no_data = query_count(table=table, query=query)
 
     # get data and save to data lake
-    data, count_error = count.map(query_data)
+    data, count_error = query_data(
+        table=table, query=query, projection=projection, count=count
+    )
 
     # if q param, check if destination folder exists
     # if not, generate backfill queries
@@ -34,17 +32,15 @@ def powerschool_test_extract():
     # merge into db table
 
 
-"""
 @graph
-def configurable_graph():
-    client = get_client()
+def powerschool_extract():
+    # instantiate PS client w/ auth (config/powerschool/resource.yaml)
+    ps = get_ps_client()
 
-    for query in graph_config["queries"]:
-        op1, op2, op3 = op_factory(query)
+    # parse queries from run config file (config/powerschool/query-*.yaml)
+    dynamic_queries = compose_queries()
 
-        out1 = op1(client)
-
-        out2 = op2(data)
-
-        out3 = op3(transformed_data)
-"""
+    # run sub-graph for each query
+    dynamic_queries.map(
+        lambda dq: powerschool_extract_graph(client=ps, dynamic_query=dq)
+    )

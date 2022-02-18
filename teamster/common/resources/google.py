@@ -16,46 +16,30 @@ class JsonGzObjectGCSIOManager(PickledObjectGCSIOManager):
     def __init__(self, bucket, client=None, prefix="dagster"):
         super().__init__(bucket, client, prefix)
 
-    def _get_path(self, context, **kwargs):
-        file_key_parts = kwargs.get("file_key_parts")
-
-        if file_key_parts:
-            file_stem = "_".join(filter(None, file_key_parts))
-            file_key = f"{file_key_parts[0]}/{file_stem}.json.gz"
-            return "/".join([self.prefix, file_key])
+    def _get_path(self, context):
+        if hasattr(context, "file_key"):
+            return "/".join([self.prefix, context.file_key])
         else:
             parts = context.get_output_identifier()
             run_id = parts[0]
             output_parts = parts[1:]
             return "/".join([self.prefix, "storage", run_id, "files", *output_parts])
 
-    def load_input(self, context):
-        file_key_parts = context.upstream_output.get("file_key_parts")
-        key = self._get_path(context.upstream_output, file_key_parts=file_key_parts)
-        context.log.debug(f"Loading GCS object from: {self._uri_for_key(key)}")
-
-        bytes_obj = self.bucket_obj.blob(key).download_as_bytes()
-        obj = json.loads(bytes_obj)
-
-        return obj
-
     def handle_output(self, context, obj):
-        context.log.info(context.metadata)
-
         if isinstance(obj, tuple):
-            data, file_key_parts = obj
+            obj, file_key = obj
+            context.file_key = file_key
+            key = self._get_path(context)
         else:
-            data = obj
-            file_key_parts = None
+            key = self._get_path(context)
 
-        key = self._get_path(context, file_key_parts=file_key_parts)
         context.log.debug(f"Writing GCS object at: {self._uri_for_key(key)}")
 
         if self._has_object(key):
             context.log.warning(f"Removing existing GCS key: {key}")
             self._rm_object(key)
 
-        jsongz_obj = gzip.compress(json.dumps(data).encode("utf-8"))
+        jsongz_obj = gzip.compress(json.dumps(obj).encode("utf-8"))
 
         backoff(
             self.bucket_obj.blob(key).upload_from_string,
