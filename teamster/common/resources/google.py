@@ -1,7 +1,7 @@
 import gzip
 import json
 
-from dagster import Field, StringSource, io_manager, resource
+from dagster import Field, StringSource, io_manager, resource, DagsterEventType
 from dagster.utils.backoff import backoff
 from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager
 from dagster_gcp.gcs.resources import GCS_CLIENT_CONFIG
@@ -16,22 +16,48 @@ class JsonGzObjectGCSIOManager(PickledObjectGCSIOManager):
     def __init__(self, bucket, client=None, prefix="dagster"):
         super().__init__(bucket, client, prefix)
 
+    def _get_file_key(self, context):
+        all_output_logs = context.step_context.instance.all_logs(
+            context.run_id, of_type=DagsterEventType.STEP_OUTPUT
+        )
+        step_output_log = [
+            log for log in all_output_logs if log.step_key == context.step_key
+        ][0]
+        metadata = step_output_log.dagster_event.event_specific_data.metadata_entries
+
+        file_key_entry = next(
+            iter([e for e in metadata if e.label == "file_key"]), None
+        )
+
+        if file_key_entry:
+            return file_key_entry.entry_data.text
+        else:
+            return None
+
     def _get_path(self, context):
-        if hasattr(context, "file_key"):
+        if context.file_key:
             return "/".join([self.prefix, context.file_key])
         else:
-            parts = context.get_output_identifier()
+            parts = context.get_output_identifier(context.step_context.instance)
             run_id = parts[0]
             output_parts = parts[1:]
             return "/".join([self.prefix, "storage", run_id, "files", *output_parts])
 
+    def load_input(self, context):
+        context.upstream_output.file_key = self._get_file_key(context.upstream_output)
+
+        key = self._get_path(context.upstream_output)
+        context.log.debug(f"Loading GCS object from: {self._uri_for_key(key)}")
+
+        bytes_obj = self.bucket_obj.blob(key).download_as_bytes()
+        obj = json.loads(gzip.decompress(bytes_obj))
+
+        return obj
+
     def handle_output(self, context, obj):
-        if isinstance(obj, tuple):
-            obj, file_key = obj
-            context.file_key = file_key
-            key = self._get_path(context)
-        else:
-            key = self._get_path(context)
+        context.file_key = self._get_file_key(context)
+
+        key = self._get_path(context)
 
         context.log.debug(f"Writing GCS object at: {self._uri_for_key(key)}")
 

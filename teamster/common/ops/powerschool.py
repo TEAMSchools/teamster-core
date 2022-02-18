@@ -68,10 +68,7 @@ def query_count(context, table, query):
 
 @op(
     out={
-        "data": Out(
-            is_required=False,
-            io_manager_key="gcs_io",
-        ),
+        "data": Out(is_required=False, io_manager_key="gcs_io"),
         "count_error": Out(is_required=False),
     }
 )
@@ -87,9 +84,9 @@ def query_data(context, table, query, projection, count):
     if len_data < count:
         updated_count = table.count(q=query)
         if len_data < updated_count:
-            yield Output(None, "count_error")  # TODO: raise exception
+            yield Output(value=None, output_name="count_error")  # TODO: raise exception
     else:
-        yield Output(value=(data, file_key), output_name="data")
+        yield Output(value=data, output_name="data", metadata={"file_key": file_key})
 
 
 # # check if data exists for specified table
