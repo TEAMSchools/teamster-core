@@ -6,15 +6,15 @@ authors = [
     {name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com"},
 ]
 dependencies = [
-    "dagster~=0.13",
-    "dagit~=0.13",
-    "requests~=2.26",
-    "powerschool~=3.1",
-    "python-dotenv~=0.19",
-    "dagster-gcp~=0.13",
-    "dagster-cloud~=0.13",
+    "dagster>=0.13",
+    "dagit>=0.13",
+    "requests>=2.26",
+    "powerschool>=3.1",
+    "python-dotenv>=0.19",
+    "dagster-gcp>=0.13",
+    "dagster-cloud>=0.13",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = {text = "GPL-3.0-or-later"}
 
 [project.urls]
@@ -30,6 +30,6 @@ build-backend = "pdm.pep517.api"
 [tool.pdm]
 [tool.pdm.dev-dependencies]
 dev = [
-    "black<22,>=21.11b0",
+    "black>=21.11b0",
     "flake8>=4.0.1",
 ]

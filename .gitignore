@@ -133,6 +133,7 @@ data/
 dev/
 archive/
 .bash_secrets
+.pdm.toml
 tmp*/
 history/
 schedules/
