@@ -30,7 +30,7 @@ class JsonGzObjectGCSIOManager(PickledObjectGCSIOManager):
         )
 
         if file_key_entry:
-            return file_key_entry.entry_data.text
+            return file_key_entry.value.text
         else:
             return None
 

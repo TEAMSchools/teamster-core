@@ -122,14 +122,15 @@ dependencies = [
 
 [[package]]
 name = "dagit"
-version = "0.14.3"
+version = "0.14.5"
 summary = "Web UI for dagster."
 dependencies = [
     "PyYAML",
     "click<9.0,>=7.0",
-    "dagster-graphql==0.14.3",
-    "dagster==0.14.3",
+    "dagster-graphql==0.14.5",
+    "dagster==0.14.5",
     "nbconvert<6.0.0,>=5.4.0",
+    "nbformat<=5.1.3",
     "requests",
     "starlette",
     "uvicorn[standard]",
@@ -138,7 +139,7 @@ dependencies = [
 
 [[package]]
 name = "dagster"
-version = "0.14.3"
+version = "0.14.5"
 summary = "The data orchestration platform built for productivity."
 dependencies = [
     "Jinja2<3.0",
@@ -171,10 +172,10 @@ dependencies = [
 
 [[package]]
 name = "dagster-cloud"
-version = "0.14.3"
+version = "0.14.5"
 summary = "UNKNOWN"
 dependencies = [
-    "dagster==0.14.3",
+    "dagster==0.14.5",
     "questionary",
     "requests",
     "typer[all]",
@@ -182,11 +183,11 @@ dependencies = [
 
 [[package]]
 name = "dagster-gcp"
-version = "0.14.3"
+version = "0.14.5"
 summary = "Package for GCP-specific Dagster framework op and resource components."
 dependencies = [
-    "dagster-pandas==0.14.3",
-    "dagster==0.14.3",
+    "dagster-pandas==0.14.5",
+    "dagster==0.14.5",
     "google-api-python-client<2.0.0",
     "google-cloud-bigquery<3,>=1.19.*",
     "google-cloud-storage",
@@ -195,10 +196,10 @@ dependencies = [
 
 [[package]]
 name = "dagster-graphql"
-version = "0.14.3"
+version = "0.14.5"
 summary = "The GraphQL frontend to python dagster."
 dependencies = [
-    "dagster==0.14.3",
+    "dagster==0.14.5",
     "gevent",
     "gevent-websocket>=0.10.1",
     "gql<3",
@@ -209,10 +210,10 @@ dependencies = [
 
 [[package]]
 name = "dagster-pandas"
-version = "0.14.3"
+version = "0.14.5"
 summary = "Utilities and examples for working with pandas and dagster, an opinionated framework for expressing data pipelines"
 dependencies = [
-    "dagster==0.14.3",
+    "dagster==0.14.5",
     "pandas",
 ]
 
@@ -377,7 +378,7 @@ dependencies = [
 
 [[package]]
 name = "googleapis-common-protos"
-version = "1.55.0"
+version = "1.56.0"
 requires_python = ">=3.6"
 summary = "Common protobufs used in Google APIs"
 dependencies = [
@@ -488,6 +489,11 @@ requires_python = ">=3.5"
 summary = "Internationalized Domain Names in Applications (IDNA)"
 
 [[package]]
+name = "ipython-genutils"
+version = "0.2.0"
+summary = "Vestigial utilities from IPython"
+
+[[package]]
 name = "jinja2"
 version = "2.11.3"
 requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
@@ -567,10 +573,11 @@ dependencies = [
 
 [[package]]
 name = "nbformat"
-version = "5.2.0"
-requires_python = ">=3.7"
+version = "5.1.3"
+requires_python = ">=3.5"
 summary = "The Jupyter Notebook format"
 dependencies = [
+    "ipython-genutils",
     "jsonschema!=2.5.0,>=2.4",
     "jupyter-core",
     "traitlets>=4.1",
@@ -1179,29 +1186,29 @@ content_hash = "sha256:8059b7d760a9a3aedb6eb82ef058a76c7a7633575f1b75b176740e683
     {file = "croniter-1.3.4-py2.py3-none-any.whl", hash = "sha256:1ac5fee61aa3467c9d998b8a889cd3acbf391ad3f473addb0212dc7733b7b5cd"},
     {file = "croniter-1.3.4.tar.gz", hash = "sha256:3169365916834be654c2cac57ea14d710e742f8eb8a5fce804f6ce548da80bf2"},
 ]
-"dagit 0.14.3" = [
-    {file = "dagit-0.14.3-py3-none-any.whl", hash = "sha256:c47c628d4e73fa99adb869b30e81d6fc7b8e47a5afe2350a0c2b7c2fa896b968"},
-    {file = "dagit-0.14.3.tar.gz", hash = "sha256:4af2ac6e6d74a10bdc731209a75b1bed9c7ee890b7dd3675717c20a8cf62e00d"},
+"dagit 0.14.5" = [
+    {file = "dagit-0.14.5-py3-none-any.whl", hash = "sha256:0cf6fdc87014700a9b2bf3c5855555fd91fedcc7d2c495acb11efd08616a1879"},
+    {file = "dagit-0.14.5.tar.gz", hash = "sha256:cdb1b17389535ba67a8405af6817af7222f2b868511163d46ff3a6178334a4b0"},
 ]
-"dagster 0.14.3" = [
-    {file = "dagster-0.14.3-py3-none-any.whl", hash = "sha256:7804c6be39e883aaa2271ae4d4ce238e0425cf536dcb708285e14c7e712446a7"},
-    {file = "dagster-0.14.3.tar.gz", hash = "sha256:9ec47c8335c3412f648418237de7ddf639bc77dc42be9bfe54eb865271d4cb4c"},
+"dagster 0.14.5" = [
+    {file = "dagster-0.14.5-py3-none-any.whl", hash = "sha256:f56882604850db464fec4f5828bcd2d9d9698099b8b2d0f150d67fa11d3e2427"},
+    {file = "dagster-0.14.5.tar.gz", hash = "sha256:26aec63c96959be4702748b28447120d9e76204ceeb7ec5268a091cf2b2be883"},
 ]
-"dagster-cloud 0.14.3" = [
-    {file = "dagster_cloud-0.14.3-py3-none-any.whl", hash = "sha256:435e798c29931103626e872c31734ef340f04f788eca145e4edd054d6696c8ac"},
-    {file = "dagster_cloud-0.14.3.tar.gz", hash = "sha256:faf3febfff764ae1e04e88091b4f020d3450e59776407f01b7bc372c7109ad4a"},
+"dagster-cloud 0.14.5" = [
+    {file = "dagster_cloud-0.14.5-py3-none-any.whl", hash = "sha256:6de2b4594876f2d40996e0ba3636ef9fae2052c34ad6ad02c2592c5186695632"},
+    {file = "dagster_cloud-0.14.5.tar.gz", hash = "sha256:cfe2234baa5f84452bdf4feabf68a33dd53f7bce28e82624c2fd3e65d10ffb9c"},
 ]
-"dagster-gcp 0.14.3" = [
-    {file = "dagster_gcp-0.14.3-py3-none-any.whl", hash = "sha256:bf2057e62ec38ba550c207d9842ab8d83c27f1edd260e63e70d784c0e16fef2c"},
-    {file = "dagster-gcp-0.14.3.tar.gz", hash = "sha256:2e0f8dcbbf2a8e4527e38e9289bd52e3a2c079606f68f68487d98ef981f59e41"},
+"dagster-gcp 0.14.5" = [
+    {file = "dagster_gcp-0.14.5-py3-none-any.whl", hash = "sha256:44fff85a219f66354654bc2657b3caa21ccbf3316d87aaf7e85aad6a9850d45f"},
+    {file = "dagster-gcp-0.14.5.tar.gz", hash = "sha256:c88a49fe6de3c46447411464a23134b887a01d827108a9abd66eb05121de9057"},
 ]
-"dagster-graphql 0.14.3" = [
-    {file = "dagster_graphql-0.14.3-py3-none-any.whl", hash = "sha256:a1936b524f7b6b10bff5a7359b5ef51b466e4d7a11d3a3072fdd081c6de28683"},
-    {file = "dagster-graphql-0.14.3.tar.gz", hash = "sha256:5243729e5fe992151e8c96da1fd728b709af79c03908db87df326feb32f0cc41"},
+"dagster-graphql 0.14.5" = [
+    {file = "dagster_graphql-0.14.5-py3-none-any.whl", hash = "sha256:b5d9e1c5c0242feadab0005f21f614fafb0cc2376a8330416809fad6c7a07f6b"},
+    {file = "dagster-graphql-0.14.5.tar.gz", hash = "sha256:e5af82facbed23f3c9864d618458b2cf997e1eb1ef480ffc726126d583a105d6"},
 ]
-"dagster-pandas 0.14.3" = [
-    {file = "dagster_pandas-0.14.3-py3-none-any.whl", hash = "sha256:733d326f84076183d143942f77684a13048a3279be7820eb4eb3ebf5ba9a335c"},
-    {file = "dagster-pandas-0.14.3.tar.gz", hash = "sha256:cd4add111c33c5a13e742158cd7399b79bc9358ebace9666c1e4cb8b10668414"},
+"dagster-pandas 0.14.5" = [
+    {file = "dagster_pandas-0.14.5-py3-none-any.whl", hash = "sha256:fda1446155c14c4a31d1032578ce7f19da5d3b83b6fade9b4c99bc7604166c8f"},
+    {file = "dagster-pandas-0.14.5.tar.gz", hash = "sha256:636cdc99170710c140fde02fe21d779b1cb0bf0aa620f15d3eba9b49a064303c"},
 ]
 "defusedxml 0.7.1" = [
     {file = "defusedxml-0.7.1-py2.py3-none-any.whl", hash = "sha256:a352e7e428770286cc899e2542b6cdaedb2b4953ff269a210103ec58f6198a61"},
@@ -1337,9 +1344,9 @@ content_hash = "sha256:8059b7d760a9a3aedb6eb82ef058a76c7a7633575f1b75b176740e683
     {file = "google_resumable_media-2.3.2-py2.py3-none-any.whl", hash = "sha256:3c13f84813861ac8f5b6371254bdd437076bf1f3bac527a9f3fd123a70166f52"},
     {file = "google-resumable-media-2.3.2.tar.gz", hash = "sha256:06924e8b1e79f158f0202e7dd151ad75b0ea9d59b997c850f56bdd4a5a361513"},
 ]
-"googleapis-common-protos 1.55.0" = [
-    {file = "googleapis_common_protos-1.55.0-py2.py3-none-any.whl", hash = "sha256:183bb0356bd614c4330ad5158bc1c1bcf9bcf7f5e7f911317559fe209496eeee"},
-    {file = "googleapis-common-protos-1.55.0.tar.gz", hash = "sha256:53eb313064738f45d5ac634155ae208e121c963659627b90dfcb61ef514c03e1"},
+"googleapis-common-protos 1.56.0" = [
+    {file = "googleapis_common_protos-1.56.0-py2.py3-none-any.whl", hash = "sha256:60220c89b8bd5272159bed4929ecdc1243ae1f73437883a499a44a1cbc084086"},
+    {file = "googleapis-common-protos-1.56.0.tar.gz", hash = "sha256:4007500795bcfc269d279f0f7d253ae18d6dc1ff5d5a73613ffe452038b1ec5f"},
 ]
 "gql 2.0.0" = [
     {file = "gql-2.0.0-py2.py3-none-any.whl", hash = "sha256:35032ddd4bfe6b8f3169f806b022168932385d751eacc5c5f7122e0b3f4d6b88"},
@@ -1516,6 +1523,10 @@ content_hash = "sha256:8059b7d760a9a3aedb6eb82ef058a76c7a7633575f1b75b176740e683
     {file = "idna-3.3-py3-none-any.whl", hash = "sha256:84d9dd047ffa80596e0f246e2eab0b391788b0503584e8945f2368256d2735ff"},
     {file = "idna-3.3.tar.gz", hash = "sha256:9d643ff0a55b762d5cdb124b8eaa99c66322e2157b69160bc32796e824360e6d"},
 ]
+"ipython-genutils 0.2.0" = [
+    {file = "ipython_genutils-0.2.0-py2.py3-none-any.whl", hash = "sha256:72dd37233799e619666c9f639a9da83c34013a73e8bbc79a7a6348d93c61fab8"},
+    {file = "ipython_genutils-0.2.0.tar.gz", hash = "sha256:eb2e116e75ecef9d4d228fdc66af54269afa26ab4463042e33785b887c628ba8"},
+]
 "jinja2 2.11.3" = [
     {file = "Jinja2-2.11.3-py2.py3-none-any.whl", hash = "sha256:03e47ad063331dd6a3f04a43eddca8a966a26ba0c5b7207a9a9e4e08f1b29419"},
     {file = "Jinja2-2.11.3.tar.gz", hash = "sha256:a6d58433de0ae800347cab1fa3043cebbabe8baa9d29e668f1c768cb87a333c6"},
@@ -1619,9 +1630,9 @@ content_hash = "sha256:8059b7d760a9a3aedb6eb82ef058a76c7a7633575f1b75b176740e683
     {file = "nbconvert-5.6.1-py2.py3-none-any.whl", hash = "sha256:f0d6ec03875f96df45aa13e21fd9b8450c42d7e1830418cccc008c0df725fcee"},
     {file = "nbconvert-5.6.1.tar.gz", hash = "sha256:21fb48e700b43e82ba0e3142421a659d7739b65568cc832a13976a77be16b523"},
 ]
-"nbformat 5.2.0" = [
-    {file = "nbformat-5.2.0-py3-none-any.whl", hash = "sha256:3e30424e8291b2188347f5c3ba5273ed3766f12f8c5137c2e456a0815f36e785"},
-    {file = "nbformat-5.2.0.tar.gz", hash = "sha256:93df0b9c67221d38fb970c48f6d361819a6c388299a0ef3171bbb912edfe1324"},
+"nbformat 5.1.3" = [
+    {file = "nbformat-5.1.3-py3-none-any.whl", hash = "sha256:eb8447edd7127d043361bc17f2f5a807626bc8e878c7709a1c647abda28a9171"},
+    {file = "nbformat-5.1.3.tar.gz", hash = "sha256:b516788ad70771c6250977c1374fcca6edebe6126fd2adb5a69aa5c2356fd1c8"},
 ]
 "numpy 1.22.3" = [
     {file = "numpy-1.22.3-cp310-cp310-macosx_10_14_x86_64.whl", hash = "sha256:92bfa69cfbdf7dfc3040978ad09a48091143cffb778ec3b03fa170c494118d75"},
