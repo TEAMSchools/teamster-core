@@ -2,6 +2,4 @@
 # See our documentation overview on Workspaces: https://docs.dagster.io/overview/repositories-workspaces/workspaces
 load_from:
   - python_file:
-      relative_path: tutorial/repository.py
-  - python_file:
       relative_path: kippnewark/repository.py
