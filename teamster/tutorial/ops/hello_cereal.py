@@ -83,4 +83,3 @@ def normalize_calories(context, cereals):
             cereal[column] = float(cereal[column]) * reweights[idx]
 
     context.resources.warehouse.update_normalized_cereals(normalized_cereals)
-

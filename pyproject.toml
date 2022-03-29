@@ -7,13 +7,10 @@ authors = [
 ]
 dependencies = [
     "dagster>=0.13",
-    "dagit>=0.13",
     "requests>=2.26",
     "powerschool>=3.1",
-    "python-dotenv>=0.19",
     "dagster-gcp>=0.13",
-    "dagster-cloud>=0.13",
-]
+    "dagster-cloud>=0.13"]
 requires-python = ">=3.9"
 license = {text = "GPL-3.0-or-later"}
 
