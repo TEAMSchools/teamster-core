@@ -1,7 +1,7 @@
 import gzip
 import json
 
-from dagster import Field, StringSource, io_manager, resource, DagsterEventType
+from dagster import DagsterEventType, Field, StringSource, io_manager, resource
 from dagster.utils.backoff import backoff
 from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager
 from dagster_gcp.gcs.resources import GCS_CLIENT_CONFIG

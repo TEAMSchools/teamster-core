@@ -1,2 +1,2 @@
-from .kippnewark import *
-from .tutorial import *
+from teamster.kippnewark import *
+from teamster.tutorial import *

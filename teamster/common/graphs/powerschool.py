@@ -1,9 +1,8 @@
 from dagster import graph
-
 from teamster.common.ops.powerschool import (
     compose_queries,
-    get_table,
     get_ps_client,
+    get_table,
     query_count,
     query_data,
     split_dynamic_output,
