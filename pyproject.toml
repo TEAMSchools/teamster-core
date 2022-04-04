@@ -30,3 +30,6 @@ dev = [
     "black>=21.11b0",
     "flake8>=4.0.1",
 ]
+
+[tool.pdm.scripts]
+_.env_file = ".env"
