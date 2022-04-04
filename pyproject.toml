@@ -6,11 +6,13 @@ authors = [
     {name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com"},
 ]
 dependencies = [
-    "dagster>=0.13",
+    "dagster>=0.14.7",
     "requests>=2.26",
     "powerschool>=3.1",
     "dagster-gcp>=0.13",
-    "dagster-cloud>=0.13"]
+    "dagster-docker>=0.14.7",
+    "dagster-cloud>=0.14.7",
+]
 requires-python = ">=3.9"
 license = {text = "GPL-3.0-or-later"}
 
