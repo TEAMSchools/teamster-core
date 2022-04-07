@@ -4,12 +4,12 @@ instance_class:
 
 dagster_cloud_api:
   agent_token:
-    env: DAGSTER_CLOUD_AGENT_TOKEN
+    env: DAGSTER_CLOUD_AGENT_TOKEN_STG
   deployment: stg
 
 user_code_launcher:
   module: dagster_cloud.workspace.docker
   class: DockerUserCodeLauncher
   config:
-      networks:
-        - dagster_cloud_agent
+    networks:
+      - dagster_cloud_agent
