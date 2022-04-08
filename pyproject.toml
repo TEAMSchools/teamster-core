@@ -38,3 +38,7 @@ k8s-secret.shell = "kubectl create secret generic dagster-cloud-agent-token --fr
 helm-repo.shell = "helm repo add dagster-cloud https://dagster-io.github.io/helm-user-cloud"
 pre_helm-install = "helm repo update"
 helm-install.shell = "helm upgrade --install user-cloud dagster-cloud/dagster-cloud-agent --namespace dagster-cloud --set dagsterCloud.deployment=prod"
+docker-build.shell = "docker build -t teamster-core ."
+docker-run.shell = "docker run -it --rm --name teamster-container teamster-core"
+docker-tag.shell = "docker tag teamster-core $REGION-docker.pkg.dev/$PROJECT_ID/teamster-core/teamster-core"
+docker-push.shell = "docker push $REGION-docker.pkg.dev/$PROJECT_ID/teamster-core/teamster-core"
