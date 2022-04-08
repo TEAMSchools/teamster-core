@@ -9,6 +9,7 @@ Next-gen data orchestration, powered by Dagster
 
 `.env`
 ```
+IMAGE_NAME=
 DAGSTER_CLOUD_AGENT_TOKEN_PROD=
 DAGSTER_CLOUD_AGENT_TOKEN_STG=
 PROJECT_ID=
