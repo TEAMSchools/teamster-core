@@ -4,9 +4,8 @@ from dagster import job, op, repository
 
 @op
 def get_ip(context):
-    resp = requests.get("https://www.google.com", stream=True)
-    ip = resp.raw._connection.sock.getsockname()
-    context.log.debug(ip)
+    resp = requests.get("https://api.ipify.org")
+    context.log.debug(resp.text)
 
 
 @job
