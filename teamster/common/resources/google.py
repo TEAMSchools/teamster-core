@@ -7,7 +7,7 @@ from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager
 from dagster_gcp.gcs.resources import GCS_CLIENT_CONFIG
 
 from google.api_core.exceptions import Forbidden, TooManyRequests
-from google.cloud import storage  # type: ignore
+from google.cloud import storage
 
 GCS_CLIENT_CONFIG["gcs_credentials"] = Field(StringSource, is_required=False)
 

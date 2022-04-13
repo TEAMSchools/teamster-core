@@ -1,8 +1,14 @@
-from dagster import resource
+from dagster import resource, StringSource
 from powerschool import PowerSchool
 
 
-@resource(config_schema={"host": str, "client_id": str, "client_secret": str})
+@resource(
+    config_schema={
+        "host": str,
+        "client_id": StringSource,
+        "client_secret": StringSource,
+    }
+)
 def powerschool(init_context):
     credentials = (
         init_context.resource_config["client_id"],
