@@ -4,7 +4,7 @@ from powerschool import PowerSchool
 
 @resource(
     config_schema={
-        "host": str,
+        "host": StringSource,
         "client_id": StringSource,
         "client_secret": StringSource,
     }
