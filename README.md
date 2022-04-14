@@ -1,9 +1,10 @@
 # teamster-core
 Next-gen data orchestration, powered by Dagster
 
-- Private GKE Autopilot cluster using Cloud NAT
-- Docker container w/ common ops, graphs, and resources
-- Dagster Cloud's local agent on your staging deployment for local development
+- Docker container featuring common ops, graphs, and resources
+- Private GKE Autopilot cluster 
+- Cloud NAT provided static external IP for the cluster
+- Dagster Cloud's Docker agent on your staging deployment for local development
 - [Google Artifact Registry](https://cloud.google.com/artifact-registry/docs/docker/store-docker-container-images)
 - Google Cloud services access prodivded by [Workload Identity](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#authenticating_to)
 - [PDM](https://pdm.fming.dev/) for dependency management and build scripts

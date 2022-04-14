@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: workload-identity-test
+  namespace: dagster-cloud
+spec:
+  containers:
+    - image: google/cloud-sdk:slim
+      name: workload-identity-test
+      command: ["sleep", "infinity"]
+  serviceAccountName: user-cloud-dagster-cloud-agent
+  # nodeSelector:
+  #   iam.gke.io/gke-metadata-server-enabled: "true"

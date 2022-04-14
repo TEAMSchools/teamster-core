@@ -1,6 +1,0 @@
-locations:
-  - location_name: kippnewark
-    image: us-central1-docker.pkg.dev/teamster-332318/teamster-kippnewark/teamster-kippnewark:latest
-    working_directory: /root/app
-    code_source:
-      package_name: teamster.local
