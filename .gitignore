@@ -165,3 +165,4 @@ history/
 schedules/
 config/
 .deploy/
+dagster-cloud-cicd.yaml

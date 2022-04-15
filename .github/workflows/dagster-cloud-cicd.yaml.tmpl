@@ -1,0 +1,37 @@
+name: Dagster Cloud CI/CD
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      # Set up Docker registry access
+      # See https://github.com/docker/login-action for more examples
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v0'
+        with:
+          token_format: 'access_token'
+          workload_identity_provider: '${GH_GCP_WI_PROVIDER}'
+          service_account: '${GCP_SERVICE_ACCOUNT}'
+      
+      - name: Login to GAR
+        uses: docker/login-action@v1
+        with:
+          registry: ${GCP_REGION}-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+
+      - name: Run Dagster Cloud CI/CD action
+        uses: dagster-io/dagster-cloud-cicd-action/deploy@v0.2.2
+        with:
+          location-file: locations.yaml
+          # Insert your Dagster Cloud Dagit URL here
+          dagit-url: https://${DAGSTER_CLOUD_INSTANCE}.dagster.cloud/${DAGSTER_CLOUD_DEPLOYMENT}
+          api-token: ${{ secrets.DAGSTER_AGENT_TOKEN }}
