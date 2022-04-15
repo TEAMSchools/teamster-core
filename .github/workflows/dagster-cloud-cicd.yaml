@@ -28,10 +28,10 @@ jobs:
           username: oauth2accesstoken
           password: ${{ steps.auth.outputs.access_token }}
 
-      - name: Run Dagster Cloud CI/CD action
-        uses: dagster-io/dagster-cloud-cicd-action/deploy@v0.2.2
-        with:
-          location-file: locations.yaml
-          # Insert your Dagster Cloud Dagit URL here
-          dagit-url: https://kipptaf.dagster.cloud/prod
-          api-token: ${{ secrets.DAGSTER_AGENT_TOKEN }}
+      # - name: Run Dagster Cloud CI/CD action
+      #   uses: dagster-io/dagster-cloud-cicd-action/deploy@v0.2.2
+      #   with:
+      #     location-file: locations.yaml
+      #     # Insert your Dagster Cloud Dagit URL here
+      #     dagit-url: https://kipptaf.dagster.cloud/prod
+      #     api-token: ${{ secrets.DAGSTER_AGENT_TOKEN }}
