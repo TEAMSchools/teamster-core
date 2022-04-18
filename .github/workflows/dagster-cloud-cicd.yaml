@@ -4,37 +4,53 @@ on:
     branches:
       - main
 
+env:
+  REGISTRY: ${{ secrets.TEAMSTER_GCP_REGION }}-docker.pkg.dev
+  IMAGE_NAME: ${{ env.REGISTRY }}/${{ secrets.TEAMSTER_GCP_PROJECT_ID }}/${{ github.event.repository.name }}/${{ github.event.repository.name }}
+  SERVICE_ACCOUNT: ${{ secrets.TEAMSTER_GCP_SA_NAME }}@${{ secrets.TEAMSTER_GCP_PROJECT_ID }}.iam.gserviceaccount.com
+
 jobs:
   build-and-update:
     runs-on: ubuntu-latest
     permissions:
-      contents: 'read'
-      id-token: 'write'
+      contents: "read"
+      id-token: "write"
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2
 
       # Set up Docker registry access
       # See https://github.com/docker/login-action for more examples
-      - id: 'auth'
-        name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v0'
+      - id: "auth"
+        name: "Authenticate to Google Cloud"
+        uses: google-github-actions/auth@v0
         with:
-          token_format: 'access_token'
-          workload_identity_provider: 'projects/624231820004/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
-          service_account: 'service-account@teamster-332318.iam.gserviceaccount.com'
-      
+          token_format: "access_token"
+          workload_identity_provider: ${{ secrets.TEAMSTER_GH_GCP_WI_PROVIDER}}
+          service_account: ${{ env.SERVICE_ACCOUNT }}
+
       - name: Login to GAR
         uses: docker/login-action@v1
         with:
-          registry: us-central1-docker.pkg.dev
+          registry: ${{ env.REGISTRY }}
           username: oauth2accesstoken
           password: ${{ steps.auth.outputs.access_token }}
 
-      # - name: Run Dagster Cloud CI/CD action
-      #   uses: dagster-io/dagster-cloud-cicd-action/deploy@v0.2.2
-      #   with:
-      #     location-file: locations.yaml
-      #     # Insert your Dagster Cloud Dagit URL here
-      #     dagit-url: https://kipptaf.dagster.cloud/prod
-      #     api-token: ${{ secrets.DAGSTER_AGENT_TOKEN }}
+      # Extract metadata (tags, labels) for Docker
+      # https://github.com/docker/metadata-action
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: ${{ env.IMAGE_NAME }}
+
+      # Build and push Docker image with Buildx (don't push on PR)
+      # https://github.com/docker/build-push-action
+      - name: Build and push Docker image
+        id: build-and-push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
