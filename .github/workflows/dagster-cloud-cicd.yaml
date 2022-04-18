@@ -6,7 +6,6 @@ on:
 
 env:
   REGISTRY: ${{ secrets.TEAMSTER_GCP_REGION }}-docker.pkg.dev
-  IMAGE_NAME: $REGISTRY/${{ secrets.TEAMSTER_GCP_PROJECT_ID }}/${{ github.event.repository.name }}/${{ github.event.repository.name }}
   SERVICE_ACCOUNT: ${{ secrets.TEAMSTER_GCP_SA_NAME }}@${{ secrets.TEAMSTER_GCP_PROJECT_ID }}.iam.gserviceaccount.com
 
 jobs:
@@ -42,7 +41,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v3
         with:
-          images: ${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ secrets.TEAMSTER_GCP_PROJECT_ID }}/${{ github.event.repository.name }}/${{ github.event.repository.name }}
 
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
