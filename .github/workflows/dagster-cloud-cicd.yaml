@@ -3,6 +3,12 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - ".gcp/"
+      - "**/README.md"
+      - "**/.gitignore"
+      - "**/*.env"
+      - "LICENSE"
 
 env:
   REGISTRY: ${{ secrets.TEAMSTER_GCP_REGION }}-docker.pkg.dev

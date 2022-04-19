@@ -34,7 +34,7 @@ dev = [
 [tool.pdm.scripts]
 _.env_file = ".env"
 k8s-namespace.shell = "kubectl create namespace dagster-cloud"
-k8s-secret.shell = "kubectl create secret generic dagster-cloud-agent-token --from-literal=DAGSTER_CLOUD_AGENT_TOKEN=$DAGSTER_CLOUD_AGENT_TOKEN_PROD --namespace dagster-cloud"
+k8s-secret.shell = "kubectl create secret generic dagster-cloud-agent-token --from-literal=DAGSTER_CLOUD_AGENT_TOKEN=$DAGSTER_CLOUD_AGENT_TOKEN --namespace dagster-cloud"
 helm-repo.shell = "helm repo add dagster-cloud https://dagster-io.github.io/helm-user-cloud"
 pre_helm-install = "helm repo update"
 helm-install.shell = "helm upgrade --install user-cloud dagster-cloud/dagster-cloud-agent --namespace dagster-cloud --set dagsterCloud.deployment=$DAGSTER_CLOUD_DEPLOYMENT"

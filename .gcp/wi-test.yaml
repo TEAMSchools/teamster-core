@@ -9,5 +9,3 @@ spec:
       name: workload-identity-test
       command: ["sleep", "infinity"]
   serviceAccountName: user-cloud-dagster-cloud-agent
-  # nodeSelector:
-  #   iam.gke.io/gke-metadata-server-enabled: "true"

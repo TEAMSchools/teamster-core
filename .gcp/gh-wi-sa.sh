@@ -1,4 +1,4 @@
-# assign WI role to service account
+# assign WI role to service account for repo
 gcloud iam service-accounts add-iam-policy-binding ${GCP_SERVICE_ACCOUNT} \
     --project=${GCP_PROJECT_ID} \
     --role="roles/iam.workloadIdentityUser" \
