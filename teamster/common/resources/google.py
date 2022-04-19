@@ -4,12 +4,20 @@ import json
 from dagster import DagsterEventType, Field, StringSource, io_manager, resource
 from dagster.utils.backoff import backoff
 from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager
-from dagster_gcp.gcs.resources import GCS_CLIENT_CONFIG
+from dagster_gcp.gcs.resources import GCS_CLIENT_CONFIG, GCSFileManager
 
 from google.api_core.exceptions import Forbidden, TooManyRequests
 from google.cloud import storage
 
 GCS_CLIENT_CONFIG["gcs_credentials"] = Field(StringSource, is_required=False)
+
+
+class GCSFileManager(GCSFileManager):
+    def __init__(self, client, gcs_bucket, gcs_base_key):
+        super().__init__(client, gcs_bucket, gcs_base_key)
+
+    def blob_exists(self):
+        pass
 
 
 class JsonGzObjectGCSIOManager(PickledObjectGCSIOManager):

@@ -10,6 +10,7 @@ def get_ps_client(context):
 @op(
     config_schema={"year_id": int, "tables": list},
     out={"query": DynamicOut()},
+    required_resource_keys={"gcs_file_manager"},
 )
 def compose_queries(context):
     year_id = context.op_config["year_id"]

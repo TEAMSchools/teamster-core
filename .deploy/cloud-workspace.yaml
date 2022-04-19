@@ -1,5 +1,5 @@
 locations:
-  - location_name: core
+  - location_name: dev
     image: us-central1-docker.pkg.dev/teamster-332318/teamster-core/teamster-core:latest
     working_directory: /root/app
     code_source:

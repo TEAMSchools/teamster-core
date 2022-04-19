@@ -10,6 +10,7 @@ on:
       - "**/.gitignore"
       - "**/*.env"
       - "LICENSE"
+      - "pyproject.toml"
 
 env:
   REGISTRY: ${{ secrets.TEAMSTER_GCP_REGION }}-docker.pkg.dev
