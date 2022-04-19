@@ -29,20 +29,25 @@ build-backend = "pdm.pep517.api"
 dev = [
     "black>=21.11b0",
     "flake8>=4.0.1",
+    "dagster-docker>=0.14.9",
 ]
 
 [tool.pdm.scripts]
 _.env_file = ".env"
 k8s-namespace.shell = "kubectl create namespace dagster-cloud"
-k8s-secret.shell = "kubectl create secret generic dagster-cloud-agent-token --from-literal=DAGSTER_CLOUD_AGENT_TOKEN=$DAGSTER_CLOUD_AGENT_TOKEN --namespace dagster-cloud"
+k8s-secret.shell = "kubectl create secret generic dagster-cloud-agent-token --from-literal=DAGSTER_CLOUD_AGENT_TOKEN=${DAGSTER_CLOUD_AGENT_TOKEN} --namespace dagster-cloud"
 helm-repo.shell = "helm repo add dagster-cloud https://dagster-io.github.io/helm-user-cloud"
 pre_helm-install = "helm repo update"
-helm-install.shell = "helm upgrade --install user-cloud dagster-cloud/dagster-cloud-agent --namespace dagster-cloud --set dagsterCloud.deployment=$DAGSTER_CLOUD_DEPLOYMENT"
+helm-install.shell = "helm upgrade --install user-cloud dagster-cloud/dagster-cloud-agent --namespace dagster-cloud --set dagsterCloud.deployment=${DAGSTER_CLOUD_DEPLOYMENT}"
 docker-build.shell = "docker-compose build"
 docker-bash.shell = "docker-compose run --rm dagster bash"
 docker-run.shell = "docker-compose run --rm dagster dagster-cloud agent run ."
-docker-push.shell = "docker push $IMAGE_URI"
+docker-push.shell = "docker push ${IMAGE_URI}"
+dagster-docker.shell = 'dagster-cloud agent run --deployment stg --agent-token ${DAGSTER_CLOUD_AGENT_TOKEN} --user-code-launcher "dagster_cloud.workspace.docker.DockerUserCodeLauncher"'
+dagster-local.shell = "docker-compose run --rm dagster dagster-cloud agent run ."
+dagster-locations.shell = "envsubst < ./.deploy/cloud-workspace.yaml.tmpl > ./.deploy/cloud-workspace.yaml"
 dagster-sync.shell = "dagster-cloud workspace sync -w ./.deploy/cloud-workspace.yaml"
 gh-wi-federation.shell = "bash ./.gcp/gh-wi-federation.sh"
+gh-location-sync.shell = "envsubst < ./.deploy/gh-cloud-workspace.yaml.tmpl > ./.deploy/gh-cloud-workspace.yaml"
 gh-wi-pool.shell = 'gcloud iam workload-identity-pools describe github-pool --location=global --format="value(name)"'
-gh-wi-sa.shell = "bash ./.gcp/gh-wi-sa.sh"
+gh-wi-sa.shell = 'gcloud iam service-accounts add-iam-policy-binding ${GCP_SERVICE_ACCOUNT} --project=${GCP_PROJECT_ID} --role="roles/iam.workloadIdentityUser" --member="principalSet://iam.googleapis.com/${GH_WORKLOAD_IDENTITY_POOL_ID}/attribute.repository/${GH_ORG_NAME}/${IMAGE_NAME}"'

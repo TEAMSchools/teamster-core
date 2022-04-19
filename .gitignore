@@ -161,7 +161,8 @@ cython_debug/
 
 # custom additions
 .vscode/
+.docker/
 history/
 schedules/
 config/
-.deploy/
+teamster/local/

@@ -1,0 +1,21 @@
+locations:
+  - location_name: core
+    image: us-central1-docker.pkg.dev/teamster-332318/teamster-core/teamster-core:latest
+    working_directory: /root/app
+    code_source:
+      package_name: teamster.local
+    container_context:
+      docker:
+        container_kwargs:
+          volumes:
+            /home/cbini/projects/dagster/teamster-core/teamster/local:
+              bind: /root/app/teamster/local
+              mode: rw
+        env_vars:
+          - POWERSCHOOL_HOST
+          - POWERSCHOOL_CLIENT_ID
+          - POWERSCHOOL_CLIENT_SECRET
+          - GOOGLE_APPLICATION_CREDENTIALS
+          - INSTANCE_NAME
+          - GCP_PROJECT_ID
+          

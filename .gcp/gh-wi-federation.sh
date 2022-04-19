@@ -1,5 +1,4 @@
 # set up Workload Identity Federation for GitHub actions
-
 # create WI pool
 gcloud iam workload-identity-pools create "github-pool" \
     --project=${GCP_PROJECT_ID} \

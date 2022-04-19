@@ -5,6 +5,7 @@ on:
       - main
     paths-ignore:
       - ".gcp/"
+      - ".deploy/"
       - "**/README.md"
       - "**/.gitignore"
       - "**/*.env"

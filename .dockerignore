@@ -65,8 +65,11 @@ env.bak/
 venv.bak/
 
 # custom additions
+.git/
+.docker/
 .vscode/
 history/
 schedules/
-.git/
+config/
+teamster/local/
 .gitignore
