@@ -1,5 +1,12 @@
 from dagster import DynamicOut, DynamicOutput, Out, Output, op
-from powerschool import utils
+
+from powerschool.utils import (
+    generate_historical_queries,
+    get_constraint_rules,
+    get_constraint_values,
+    get_query_expression,
+    transform_yearid,
+)
 
 
 @op(required_resource_keys={"powerschool"})
@@ -10,36 +17,67 @@ def get_ps_client(context):
 @op(
     config_schema={"year_id": int, "tables": list},
     out={"query": DynamicOut()},
-    required_resource_keys={"gcs_file_manager"},
+    required_resource_keys={"gcs_fm"},
 )
 def compose_queries(context):
     year_id = context.op_config["year_id"]
     tables = context.op_config["tables"]
 
-    for i, tbl in enumerate(tables):
+    for tbl in tables:
         table_name = tbl["name"]
-        queries = tbl.get("q", [{}])
-        projection = tbl.get("projection")
+        queries = tbl.get("queries", {})
 
-        for j, q in enumerate(queries):
-            if q:
+        filtered_queries = [fq for fq in queries if fq.get("q")]
+
+        if filtered_queries:
+            for i, fq in enumerate(filtered_queries):
+                fq_projection = fq.get("projection")
+                q = fq.get("q")
+
                 selector = q.get("selector")
-                value = q.get("value", utils.transform_yearid(year_id, selector))
+                value = q.get("value", transform_yearid(year_id, selector))
 
-                constraint_rules = utils.get_constraint_rules(selector, year_id)
-                constraint_values = utils.get_constraint_values(
+                constraint_rules = get_constraint_rules(selector, year_id)
+                constraint_values = get_constraint_values(
                     selector, value, constraint_rules["step_size"]
                 )
-                composed_query = utils.get_query_expression(
-                    selector, **constraint_values
+                composed_query = get_query_expression(selector, **constraint_values)
+
+                yield DynamicOutput(
+                    value=(table_name, composed_query, fq_projection),
+                    output_name="query",
+                    mapping_key=f"{table_name}_q_{i}",
                 )
-            else:
-                composed_query = None
+
+            # check if no data exists and generate historical queries
+            if not context.resources.gcs_fm.blob_exists(file_key=table_name):
+                context.log.info(
+                    f"No data. Generating historical queries for {table_name}"
+                )
+
+                hq_projection = next(
+                    iter([pj["projection"] for pj in queries if pj.get("projection")]),
+                    None,
+                )
+
+                hist_query_exprs = generate_historical_queries(year_id, selector)
+                hist_query_exprs.reverse()
+
+                for j, hq in enumerate(hist_query_exprs):
+                    yield DynamicOutput(
+                        value=(table_name, hq, hq_projection),
+                        output_name="query",
+                        mapping_key=f"{table_name}_hq_{j}",
+                    )
+        else:
+            projection = next(
+                iter([pj["projection"] for pj in queries if pj.get("projection")]), None
+            )
 
             yield DynamicOutput(
-                value=(table_name, composed_query, projection),
+                value=(table_name, None, projection),
                 output_name="query",
-                mapping_key=f"{table_name}_{i}_{j}",
+                mapping_key=table_name,
             )
 
 
@@ -88,13 +126,3 @@ def query_data(context, table, query, projection, count):
             yield Output(value=None, output_name="count_error")  # TODO: raise exception
     else:
         yield Output(value=data, output_name="data", metadata={"file_key": file_key})
-
-
-# # check if data exists for specified table
-# if not [f for f in file_dir.iterdir()]:
-#     # generate historical queries
-#     print("\tNo existing data. Generating historical queries...")
-#     query_params = utils.generate_historical_queries(
-#         current_yearid, selector
-#     )
-#     query_params.reverse()

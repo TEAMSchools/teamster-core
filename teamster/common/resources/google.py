@@ -3,6 +3,7 @@ import json
 
 from dagster import DagsterEventType, Field, StringSource, io_manager, resource
 from dagster.utils.backoff import backoff
+from dagster.utils.merger import merge_dicts
 from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager
 from dagster_gcp.gcs.resources import GCS_CLIENT_CONFIG, GCSFileManager
 
@@ -16,8 +17,11 @@ class GCSFileManager(GCSFileManager):
     def __init__(self, client, gcs_bucket, gcs_base_key):
         super().__init__(client, gcs_bucket, gcs_base_key)
 
-    def blob_exists(self):
-        pass
+    def blob_exists(self, file_key, ext=None):
+        gcs_key = self.get_full_key(file_key + (("." + ext) if ext is not None else ""))
+        bucket_obj = self._client.bucket(self._gcs_bucket)
+        blob_obj = bucket_obj.blob(gcs_key)
+        return blob_obj.exists()
 
 
 class JsonGzObjectGCSIOManager(PickledObjectGCSIOManager):
@@ -142,3 +146,26 @@ def gcs_jsongz_io_manager(init_context):
         init_context.resource_config["gcs_prefix"],
     )
     return json_io_manager
+
+
+@resource(
+    merge_dicts(
+        GCS_CLIENT_CONFIG,
+        {
+            "gcs_bucket": Field(StringSource),
+            "gcs_prefix": Field(
+                StringSource, is_required=False, default_value="dagster"
+            ),
+        },
+    )
+)
+def gcs_file_manager(context):
+    """FileManager that provides abstract access to GCS.
+    Implements the :py:class:`~dagster.core.storage.file_manager.FileManager` API.
+    """
+    gcs_client = _gcs_client_from_config(context.resource_config)
+    return GCSFileManager(
+        client=gcs_client,
+        gcs_bucket=context.resource_config["gcs_bucket"],
+        gcs_base_key=context.resource_config["gcs_prefix"],
+    )

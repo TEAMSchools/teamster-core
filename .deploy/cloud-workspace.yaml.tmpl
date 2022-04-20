@@ -8,8 +8,8 @@ locations:
       docker:
         container_kwargs:
           volumes:
-            ${PWD}/teamster/local:
-              bind: /root/app/teamster/local
+            ${PWD}/teamster:
+              bind: /root/app/teamster
               mode: rw
         env_vars:
           - POWERSCHOOL_HOST
@@ -17,5 +17,6 @@ locations:
           - POWERSCHOOL_CLIENT_SECRET
           - GOOGLE_APPLICATION_CREDENTIALS
           - INSTANCE_NAME
+          - IMAGE_NAME
           - GCP_PROJECT_ID
           
