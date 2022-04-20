@@ -5,7 +5,8 @@ from dagster import DagsterEventType, Field, StringSource, io_manager, resource
 from dagster.utils.backoff import backoff
 from dagster.utils.merger import merge_dicts
 from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager
-from dagster_gcp.gcs.resources import GCS_CLIENT_CONFIG, GCSFileManager
+from dagster_gcp.gcs.file_manager import GCSFileManager
+from dagster_gcp.gcs.resources import GCS_CLIENT_CONFIG
 
 from google.api_core.exceptions import Forbidden, TooManyRequests
 from google.cloud import storage
@@ -19,9 +20,19 @@ class GCSFileManager(GCSFileManager):
 
     def blob_exists(self, file_key, ext=None):
         gcs_key = self.get_full_key(file_key + (("." + ext) if ext is not None else ""))
-        bucket_obj = self._client.bucket(self._gcs_bucket)
-        blob_obj = bucket_obj.blob(gcs_key)
-        return blob_obj.exists()
+
+        blobs_list = self._client.list_blobs(
+            bucket_or_name=self._gcs_bucket, prefix=gcs_key
+        )
+
+        try:
+            blob_match = [bl for bl in blobs_list if gcs_key in bl.name]
+            if blob_match:
+                return True
+            else:
+                return False
+        except AttributeError:
+            return False
 
 
 class JsonGzObjectGCSIOManager(PickledObjectGCSIOManager):

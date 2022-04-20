@@ -1,4 +1,22 @@
-from dagster import DynamicOut, DynamicOutput, Out, Output, op
+from dagster import (
+    op,
+    In,
+    Out,
+    DynamicOut,
+    DynamicOutput,
+    Output,
+    Field,
+    Array,
+    Shape,
+    Any,
+    Dict,
+    Int,
+    Nothing,
+    Optional,
+    Tuple,
+    String,
+)
+from dagster.core.types.dagster_type import List
 
 from powerschool.utils import (
     generate_historical_queries,
@@ -9,19 +27,46 @@ from powerschool.utils import (
 )
 
 
-@op(required_resource_keys={"powerschool"})
-def get_ps_client(context):
-    return context.resources.powerschool
-
-
 @op(
-    config_schema={"year_id": int, "tables": list},
-    out={"query": DynamicOut()},
+    config_schema={
+        "tables": Field(
+            Array(
+                Shape(
+                    {
+                        "name": String,
+                        "queries": Field(
+                            Array(
+                                Shape(
+                                    {
+                                        "projection": Field(String, is_required=False),
+                                        "q": Field(
+                                            Shape(
+                                                {
+                                                    "selector": String,
+                                                    "value": Field(
+                                                        Any, is_required=False
+                                                    ),
+                                                }
+                                            ),
+                                            is_required=False,
+                                        ),
+                                    }
+                                )
+                            ),
+                            is_required=False,
+                        ),
+                    }
+                )
+            )
+        ),
+        "year_id": Field(Int, is_required=True),  # TODO: make optional w/ default val
+    },
+    out={"dynamic_query": DynamicOut(dagster_type=Tuple)},
     required_resource_keys={"gcs_fm"},
 )
 def compose_queries(context):
-    year_id = context.op_config["year_id"]
     tables = context.op_config["tables"]
+    year_id = context.op_config.get("year_id")
 
     for tbl in tables:
         table_name = tbl["name"]
@@ -45,7 +90,7 @@ def compose_queries(context):
 
                 yield DynamicOutput(
                     value=(table_name, composed_query, fq_projection),
-                    output_name="query",
+                    output_name="dynamic_query",
                     mapping_key=f"{table_name}_q_{i}",
                 )
 
@@ -66,7 +111,7 @@ def compose_queries(context):
                 for j, hq in enumerate(hist_query_exprs):
                     yield DynamicOutput(
                         value=(table_name, hq, hq_projection),
-                        output_name="query",
+                        output_name="dynamic_query",
                         mapping_key=f"{table_name}_hq_{j}",
                     )
         else:
@@ -76,42 +121,71 @@ def compose_queries(context):
 
             yield DynamicOutput(
                 value=(table_name, None, projection),
-                output_name="query",
+                output_name="dynamic_query",
                 mapping_key=table_name,
             )
 
 
-@op(out={"table_name": Out(), "query": Out(), "projection": Out()})
-def split_dynamic_output(context, dynamic_output):
-    table_name, query, projection = dynamic_output
+@op(
+    ins={"dynamic_query": In(dagster_type=Tuple)},
+    out={
+        "table_name": Out(dagster_type=String),
+        "query": Out(dagster_type=Optional[String]),
+        "projection": Out(dagster_type=Optional[String]),
+    },
+)
+def split_dynamic_output(dynamic_query):
+    table_name, query, projection = dynamic_query
 
-    yield Output(table_name, "table_name")
-    yield Output(query, "query")
-    yield Output(projection, "projection")
-
-
-@op(out={"table": Out()})
-def get_table(context, client, table_name):
-    yield Output(client.get_schema_table(table_name), "table")
-
-
-@op(out={"count": Out(is_required=False), "no_data": Out(is_required=False)})
-def query_count(context, table, query):
-    count = table.count(q=query)
-
-    if count > 0:
-        yield Output(count, "count")
-    else:
-        yield Output(None, "no_data")
+    yield Output(value=table_name, output_name="table_name")
+    yield Output(value=query, output_name="query")
+    yield Output(value=projection, output_name="projection")
 
 
 @op(
-    out={
-        "data": Out(is_required=False, io_manager_key="gcs_io"),
-        "count_error": Out(is_required=False),
-    }
+    ins={"table_name": In(dagster_type=String)},
+    out={"table": Out(dagster_type=Any)},
+    required_resource_keys={"powerschool"},
 )
-def query_data(context, table, query, projection, count):
+def get_table(context, table_name):
+    table = context.resources.powerschool.get_schema_table(table_name)
+    yield Output(value=table, output_name="table")
+
+
+@op(
+    ins={"table": In(dagster_type=Any), "query": In(dagster_type=Optional[String])},
+    out={
+        "count": Out(dagster_type=Int, is_required=False),
+        "no_data": Out(dagster_type=Nothing, is_required=False),
+    },
+)
+def query_count(context, table, query):
+    context.log.info(f"{table.name}?q={query}")
+
+    count = table.count(q=query)
+    context.log.info(f"Found {count} records")
+
+    if count > 0:
+        yield Output(value=count, output_name="count")
+    else:
+        yield Output(value=None, output_name="no_data")
+
+
+@op(
+    ins={
+        "table": In(dagster_type=Any),
+        "query": In(dagster_type=Optional[String]),
+        "projection": In(dagster_type=Optional[String]),
+        "count": In(dagster_type=Int),
+    },
+    out={
+        "data": Out(
+            dagster_type=List[Dict], is_required=False, io_manager_key="gcs_io"
+        ),
+        "count_error": Out(dagster_type=Nothing, is_required=False),
+    },
+)
+def query_data(table, query, projection, count):
     file_key_parts = [table.name, str(query or "")]
     file_stem = "_".join(filter(None, file_key_parts))
     file_ext = "json.gz"

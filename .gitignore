@@ -164,5 +164,4 @@ cython_debug/
 .docker/
 history/
 schedules/
-config/
-teamster/local/
+local/

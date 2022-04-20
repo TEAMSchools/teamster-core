@@ -1,0 +1,14 @@
+resources:
+  gcs:
+    config:
+      project:
+        env: GCP_PROJECT_ID
+  gcs_io:
+    config:
+      gcs_bucket:
+        env: IMAGE_NAME
+  gcs_fm:
+    config:
+      gcs_bucket:
+        env: IMAGE_NAME
+        
