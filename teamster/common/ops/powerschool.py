@@ -1,23 +1,6 @@
-from dagster import (
-    op,
-    In,
-    Out,
-    DynamicOut,
-    DynamicOutput,
-    Output,
-    Field,
-    Array,
-    Shape,
-    Any,
-    Dict,
-    Int,
-    Nothing,
-    Optional,
-    Tuple,
-    String,
-)
-from dagster.core.types.dagster_type import List
-
+from dagster import op
+from dagster import Any, Dict, Int, List, Nothing, Optional, String, Tuple
+from dagster import In, Out, DynamicOut, Output, DynamicOutput
 from powerschool.utils import (
     generate_historical_queries,
     get_constraint_rules,
@@ -26,41 +9,11 @@ from powerschool.utils import (
     transform_yearid,
 )
 
+from teamster.common.config.powerschool import PS_QUERY_CONFIG
+
 
 @op(
-    config_schema={
-        "tables": Field(
-            Array(
-                Shape(
-                    {
-                        "name": String,
-                        "queries": Field(
-                            Array(
-                                Shape(
-                                    {
-                                        "projection": Field(String, is_required=False),
-                                        "q": Field(
-                                            Shape(
-                                                {
-                                                    "selector": String,
-                                                    "value": Field(
-                                                        Any, is_required=False
-                                                    ),
-                                                }
-                                            ),
-                                            is_required=False,
-                                        ),
-                                    }
-                                )
-                            ),
-                            is_required=False,
-                        ),
-                    }
-                )
-            )
-        ),
-        "year_id": Field(Int, is_required=True),  # TODO: make optional w/ default val
-    },
+    config_schema=PS_QUERY_CONFIG,
     out={"dynamic_query": DynamicOut(dagster_type=Tuple)},
     required_resource_keys={"gcs_fm"},
 )
@@ -160,7 +113,7 @@ def get_table(context, table_name):
     },
 )
 def query_count(context, table, query):
-    context.log.info(f"{table.name}?q={query}")
+    context.log.debug(f"{table.name}?q={query}")
 
     count = table.count(q=query)
     context.log.info(f"Found {count} records")
@@ -185,12 +138,13 @@ def query_count(context, table, query):
         "count_error": Out(dagster_type=Nothing, is_required=False),
     },
 )
-def query_data(table, query, projection, count):
+def query_data(context, table, query, projection, count):
     file_key_parts = [table.name, str(query or "")]
     file_stem = "_".join(filter(None, file_key_parts))
     file_ext = "json.gz"
     file_key = f"{file_key_parts[0]}/{file_stem}.{file_ext}"
 
+    context.log.debug(f"{table.name}\n{query}\n{projection}")
     data = table.query(q=query, projection=projection)
 
     len_data = len(data)

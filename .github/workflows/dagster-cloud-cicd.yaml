@@ -6,6 +6,7 @@ on:
     paths-ignore:
       - ".gcp/*"
       - ".deploy/*"
+      - ".github/*"
       - "**/README.md"
       - "**/.gitignore"
       - "**/*.env"

@@ -9,7 +9,7 @@ from teamster.common.ops.powerschool import (
 
 
 @graph
-def powerschool_extract_graph(dynamic_query):
+def get_query_data(dynamic_query):
     # split DynamicOutput
     table_name, query, projection = split_dynamic_output(dynamic_query=dynamic_query)
 
@@ -28,12 +28,9 @@ def powerschool_extract_graph(dynamic_query):
 
 
 @graph
-def powerschool_extract():
+def run_queries():
     # parse queries from run config file (config/powerschool/query-*.yaml)
     dynamic_queries = compose_queries()
 
     # run sub-graph for each query
-    dynamic_queries.map(
-        # lambda dq: powerschool_extract_graph(client=ps, dynamic_query=dq)
-        powerschool_extract_graph
-    )
+    dynamic_queries.map(get_query_data)
