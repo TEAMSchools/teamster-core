@@ -3,15 +3,13 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - ".gcp/*"
-      - ".deploy/*"
-      - ".github/*"
-      - "**/README.md"
-      - "**/.gitignore"
-      - "**/*.env"
-      - "LICENSE"
-      - "pyproject.toml"
+    paths:
+      - "teamster/*"
+      - ".github/workflows/dagster-cloud-cicd.yaml"
+      - ".deploy/cloud-workspace-gh.yaml"
+      - "Dockerfile"
+      - ".dockerignore"
+      - "pdm.lock"
 
 env:
   REGISTRY: ${{ secrets.TEAMSTER_GCP_REGION }}-docker.pkg.dev
