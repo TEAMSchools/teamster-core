@@ -160,8 +160,11 @@ cython_debug/
 #.idea/
 
 # custom additions
-.vscode/
-.docker/
+.docker
 history/
 schedules/
-local/
+deployment-old.yaml
+deployment-new.yaml
+deployment-patch.yaml
+!env/
+*.env

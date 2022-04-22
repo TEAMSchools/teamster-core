@@ -1,0 +1,15 @@
+{
+    "python.formatting.provider": "black",
+    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": true,
+    "python.analysis.completeFunctionParens": true,
+    "python.autoComplete.extraPaths": [
+        "__pypackages__/3.9/lib"
+    ],
+    "python.analysis.extraPaths": [
+        "__pypackages__/3.9/lib"
+    ],
+    "python.linting.flake8Args": [
+        "--max-line-length=88"
+    ]
+}

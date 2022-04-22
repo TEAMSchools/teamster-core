@@ -6,8 +6,8 @@ authors = [
     {name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com"},
 ]
 dependencies = [
-    "dagster>=0.14.7",
-    "dagster-cloud>=0.14.7",
+    "dagster-cloud>=0.14.9",
+    "dagster>=0.14.9",
     "powerschool>=3.1",
     "dagster-gcp>=0.13",
 ]
@@ -19,23 +19,27 @@ homepage = ""
 
 
 [project.optional-dependencies]
-[build-system]
-requires = ["pdm-pep517"]
-build-backend = "pdm.pep517.api"
-
 [tool]
 [tool.pdm]
 [tool.pdm.dev-dependencies]
 dev = [
     "black>=21.11b0",
     "flake8>=4.0.1",
+    "setuptools>=62.1.0",
     "dagster-docker>=0.14.9",
 ]
 
+[build-system]
+requires = ["pdm-pep517>=0.12.0"]
+build-backend = "pdm.pep517.api"
+
 [tool.pdm.scripts]
-_.env_file = ".env"
+_.env_file = "./env/prod.env"
+env-setup.env_file = "./env/.env"
+env-setup.shell = "bash ./env/envsubst-file.sh"
 k8s-namespace.shell = "kubectl create namespace dagster-cloud"
-k8s-secret.shell = "kubectl create secret generic dagster-cloud-agent-token --from-literal=DAGSTER_CLOUD_AGENT_TOKEN=${DAGSTER_CLOUD_AGENT_TOKEN} --namespace dagster-cloud"
+k8s-secret.shell = "kubectl create secret generic ${INSTANCE_NAME} --save-config --dry-run=client --from-env-file ./env/prod.env --namespace dagster-cloud -o yaml | kubectl apply -f -"
+k8s-secret-agent.shell = "kubectl create secret generic dagster-cloud-agent-token --from-literal=DAGSTER_CLOUD_AGENT_TOKEN=${DAGSTER_CLOUD_AGENT_TOKEN} --namespace dagster-cloud"
 helm-repo.shell = "helm repo add dagster-cloud https://dagster-io.github.io/helm-user-cloud"
 pre_helm-install = "helm repo update"
 helm-install.shell = "helm upgrade --install user-cloud dagster-cloud/dagster-cloud-agent --namespace dagster-cloud --set dagsterCloud.deployment=${DAGSTER_CLOUD_DEPLOYMENT}"

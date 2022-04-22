@@ -71,5 +71,5 @@ venv.bak/
 history/
 schedules/
 config/
-teamster/local/
 .gitignore
+teamster/local/
