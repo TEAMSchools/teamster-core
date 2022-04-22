@@ -4,7 +4,7 @@ on:
     branches:
       - main
     paths:
-      - "teamster/*"
+      - "teamster/**"
       - ".github/workflows/dagster-cloud-cicd.yaml"
       - ".deploy/cloud-workspace-gh.yaml"
       - "Dockerfile"
