@@ -97,15 +97,6 @@ def split_dynamic_output(dynamic_query):
     yield Output(value=projection, output_name="projection")
 
 
-# @op(
-#     ins={"table_name": In(dagster_type=String)},
-#     out={"table": Out(dagster_type=Any)},
-# )
-# def get_table(context, table_name):
-#     table = context.resources.powerschool.get_schema_table(table_name)
-#     yield Output(value=table, output_name="table")
-
-
 @op(
     ins={"table": In(dagster_type=Any), "query": In(dagster_type=Optional[String])},
     out={
