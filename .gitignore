@@ -168,4 +168,5 @@ deployment-new.yaml
 deployment-patch.yaml
 !env/
 *.env
+cloud-workspace-*.yaml
 teamster/local/
