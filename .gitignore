@@ -168,3 +168,4 @@ deployment-new.yaml
 deployment-patch.yaml
 !env/
 *.env
+teamster/local/
