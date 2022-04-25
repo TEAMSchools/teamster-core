@@ -15,18 +15,17 @@ from teamster.common.config.powerschool import PS_QUERY_CONFIG
 @op(
     config_schema=PS_QUERY_CONFIG,
     out={"dynamic_query": DynamicOut(dagster_type=Tuple)},
-    required_resource_keys={"gcs_fm"},
+    required_resource_keys={"gcs_fm", "powerschool"},
 )
 def compose_queries(context):
     tables = context.op_config["tables"]
     year_id = context.op_config.get("year_id")
 
     for tbl in tables:
-        table_name = tbl["name"]
+        table = context.resources.powerschool.get_schema_table(tbl["name"])
         queries = tbl.get("queries", {})
 
         filtered_queries = [fq for fq in queries if fq.get("q")]
-
         if filtered_queries:
             for i, fq in enumerate(filtered_queries):
                 fq_projection = fq.get("projection")
@@ -45,15 +44,15 @@ def compose_queries(context):
                     composed_query = get_query_expression(selector, **constraint_values)
 
                 yield DynamicOutput(
-                    value=(table_name, composed_query, fq_projection),
+                    value=(table, composed_query, fq_projection),
                     output_name="dynamic_query",
-                    mapping_key=f"{table_name}_q_{i}",
+                    mapping_key=f"{table.name}_q_{i}",
                 )
 
             # check if no data exists and generate historical queries
-            if not context.resources.gcs_fm.blob_exists(file_key=table_name):
+            if not context.resources.gcs_fm.blob_exists(file_key=table.name):
                 context.log.info(
-                    f"No data. Generating historical queries for {table_name}"
+                    f"No data. Generating historical queries for {table.name}"
                 )
 
                 hq_projection = next(
@@ -66,9 +65,9 @@ def compose_queries(context):
 
                 for j, hq in enumerate(hist_query_exprs):
                     yield DynamicOutput(
-                        value=(table_name, hq, hq_projection),
+                        value=(table, hq, hq_projection),
                         output_name="dynamic_query",
-                        mapping_key=f"{table_name}_hq_{j}",
+                        mapping_key=f"{table.name}_hq_{j}",
                     )
         else:
             projection = next(
@@ -76,36 +75,35 @@ def compose_queries(context):
             )
 
             yield DynamicOutput(
-                value=(table_name, None, projection),
+                value=(table, None, projection),
                 output_name="dynamic_query",
-                mapping_key=table_name,
+                mapping_key=table.name,
             )
 
 
 @op(
     ins={"dynamic_query": In(dagster_type=Tuple)},
     out={
-        "table_name": Out(dagster_type=String),
+        "table": Out(dagster_type=Any),
         "query": Out(dagster_type=Optional[String]),
         "projection": Out(dagster_type=Optional[String]),
     },
 )
 def split_dynamic_output(dynamic_query):
-    table_name, query, projection = dynamic_query
+    table, query, projection = dynamic_query
 
-    yield Output(value=table_name, output_name="table_name")
+    yield Output(value=table, output_name="table")
     yield Output(value=query, output_name="query")
     yield Output(value=projection, output_name="projection")
 
 
-@op(
-    ins={"table_name": In(dagster_type=String)},
-    out={"table": Out(dagster_type=Any)},
-    required_resource_keys={"powerschool"},
-)
-def get_table(context, table_name):
-    table = context.resources.powerschool.get_schema_table(table_name)
-    yield Output(value=table, output_name="table")
+# @op(
+#     ins={"table_name": In(dagster_type=String)},
+#     out={"table": Out(dagster_type=Any)},
+# )
+# def get_table(context, table_name):
+#     table = context.resources.powerschool.get_schema_table(table_name)
+#     yield Output(value=table, output_name="table")
 
 
 @op(

@@ -1,7 +1,6 @@
 from dagster import graph
 from teamster.common.ops.powerschool import (
     compose_queries,
-    get_table,
     query_count,
     query_data,
     split_dynamic_output,
@@ -11,10 +10,7 @@ from teamster.common.ops.powerschool import (
 @graph
 def get_query_data(dynamic_query):
     # split DynamicOutput
-    table_name, query, projection = split_dynamic_output(dynamic_query=dynamic_query)
-
-    # instantiate table object
-    table = get_table(table_name=table_name)
+    table, query, projection = split_dynamic_output(dynamic_query=dynamic_query)
 
     # get expected record count, end if 0
     count, no_data = query_count(table=table, query=query)
