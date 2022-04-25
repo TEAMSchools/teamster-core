@@ -6,7 +6,7 @@ from powerschool.utils import (
     get_constraint_rules,
     get_constraint_values,
     get_query_expression,
-    transform_yearid,
+    transform_year_id,
 )
 
 from teamster.common.config.powerschool import PS_QUERY_CONFIG
@@ -36,7 +36,7 @@ def compose_queries(context):
                     composed_query = q
                 else:
                     selector = q.get("selector")
-                    value = q.get("value", transform_yearid(year_id, selector))
+                    value = q.get("value", transform_year_id(year_id, selector))
 
                     constraint_rules = get_constraint_rules(selector, year_id)
                     constraint_values = get_constraint_values(

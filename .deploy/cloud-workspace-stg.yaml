@@ -1,6 +1,6 @@
 locations:
-  - location_name: ${INSTANCE_NAME}-dev
-    image: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${IMAGE_NAME}/${IMAGE_NAME}:latest
+  - location_name: core-stg
+    image: us-central1-docker.pkg.dev/teamster-332318/teamster-core/teamster-core:latest
     working_directory: /root/app
     code_source:
       package_name: teamster.local
@@ -8,7 +8,7 @@ locations:
       docker:
         container_kwargs:
           volumes:
-            ${PWD}/teamster:
+            /home/cbini/projects/dagster/teamster-core/teamster:
               bind: /root/app/teamster
               mode: rw
         env_vars:
