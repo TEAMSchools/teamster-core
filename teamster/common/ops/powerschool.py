@@ -32,14 +32,17 @@ def compose_queries(context):
                 fq_projection = fq.get("projection")
                 q = fq.get("q")
 
-                selector = q.get("selector")
-                value = q.get("value", transform_yearid(year_id, selector))
+                if isinstance(q, str):
+                    composed_query = q
+                else:
+                    selector = q.get("selector")
+                    value = q.get("value", transform_yearid(year_id, selector))
 
-                constraint_rules = get_constraint_rules(selector, year_id)
-                constraint_values = get_constraint_values(
-                    selector, value, constraint_rules["step_size"]
-                )
-                composed_query = get_query_expression(selector, **constraint_values)
+                    constraint_rules = get_constraint_rules(selector, year_id)
+                    constraint_values = get_constraint_values(
+                        selector, value, constraint_rules["step_size"]
+                    )
+                    composed_query = get_query_expression(selector, **constraint_values)
 
                 yield DynamicOutput(
                     value=(table_name, composed_query, fq_projection),
