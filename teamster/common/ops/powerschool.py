@@ -43,32 +43,40 @@ def compose_queries(context):
                     )
                     composed_query = get_query_expression(selector, **constraint_values)
 
+                    # check if no data exists and generate historical queries
+                    if not context.resources.gcs_fm.blob_exists(file_key=table.name):
+                        context.log.info(
+                            f"No data. Generating historical queries for {table.name}"
+                        )
+
+                        hq_projection = next(
+                            iter(
+                                [
+                                    pj["projection"]
+                                    for pj in queries
+                                    if pj.get("projection")
+                                ]
+                            ),
+                            None,
+                        )
+
+                        hist_query_exprs = generate_historical_queries(
+                            year_id, selector
+                        )
+                        hist_query_exprs.reverse()
+
+                        for j, hq in enumerate(hist_query_exprs):
+                            yield DynamicOutput(
+                                value=(table, hq, hq_projection),
+                                output_name="dynamic_query",
+                                mapping_key=f"{table.name}_hq_{j}",
+                            )
+
                 yield DynamicOutput(
                     value=(table, composed_query, fq_projection),
                     output_name="dynamic_query",
                     mapping_key=f"{table.name}_q_{i}",
                 )
-
-            # check if no data exists and generate historical queries
-            if not context.resources.gcs_fm.blob_exists(file_key=table.name):
-                context.log.info(
-                    f"No data. Generating historical queries for {table.name}"
-                )
-
-                hq_projection = next(
-                    iter([pj["projection"] for pj in queries if pj.get("projection")]),
-                    None,
-                )
-
-                hist_query_exprs = generate_historical_queries(year_id, selector)
-                hist_query_exprs.reverse()
-
-                for j, hq in enumerate(hist_query_exprs):
-                    yield DynamicOutput(
-                        value=(table, hq, hq_projection),
-                        output_name="dynamic_query",
-                        mapping_key=f"{table.name}_hq_{j}",
-                    )
         else:
             projection = next(
                 iter([pj["projection"] for pj in queries if pj.get("projection")]), None
