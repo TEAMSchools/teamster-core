@@ -8,7 +8,7 @@ authors = [
 dependencies = [
     "dagster-cloud>=0.14.9",
     "dagster>=0.14.9",
-    "powerschool>=3.2.1",
+    "powerschool>=3.2.2",
     "dagster-gcp>=0.13",
 ]
 requires-python = ">=3.9"

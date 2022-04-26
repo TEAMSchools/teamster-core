@@ -1,6 +1,6 @@
 import os
 
-from dagster import Field, Array, Shape, Any, IntSource, String, ScalarUnion
+from dagster import Field, Array, Shape, Any, Int, IntSource, String, ScalarUnion
 
 PS_QUERY_CONFIG = {
     "tables": Field(
@@ -21,6 +21,9 @@ PS_QUERY_CONFIG = {
                                                     "selector": String,
                                                     "value": Field(
                                                         Any, is_required=False
+                                                    ),
+                                                    "max_value": Field(
+                                                        Int, is_required=False
                                                     ),
                                                 }
                                             ),

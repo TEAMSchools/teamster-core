@@ -46,7 +46,7 @@ def compose_queries(context):
 
                     if value == "resync":
                         context.log.info(
-                            f"No data. Generating historical queries for {table.name}"
+                            f"Generating historical queries for {table.name}"
                         )
 
                         hq_projection = next(
@@ -60,8 +60,13 @@ def compose_queries(context):
                             None,
                         )
 
+                        max_value = q.get("max_value")
+                        # set max historical value for "id" queries to 1.5x count
+                        if not max_value and selector[-2:] == "id":
+                            max_value = table.count() * 1.5
+
                         hist_query_exprs = generate_historical_queries(
-                            year_id, selector
+                            year_id, selector, max_value=max_value
                         )
                         hist_query_exprs.reverse()
 
@@ -158,7 +163,7 @@ def query_data(context, table, query, projection, count):
     context.log.debug(f"{table.name}\n{query}\n{projection}")
 
     try:
-        with time_limit(3600):
+        with time_limit(7200):
             data = table.query(q=query, projection=projection)
     except TimeoutError as e:
         raise RetryRequested() from e
