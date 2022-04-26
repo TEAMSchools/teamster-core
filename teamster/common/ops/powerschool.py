@@ -72,14 +72,14 @@ def compose_queries(context):
                         hist_query_exprs.reverse()
 
                         for j, hq in enumerate(hist_query_exprs):
-                            context.log.debug(hq)
-                            hq_count = table.count(q=hq)
-                            if hq_count > 0:
-                                yield DynamicOutput(
-                                    value=(table, hq, hq_projection),
-                                    output_name="dynamic_query",
-                                    mapping_key=f"{table.name}_hq_{j}",
-                                )
+                            # context.log.debug(hq)
+                            # hq_count = table.count(q=hq)
+                            # if hq_count > 0:
+                            yield DynamicOutput(
+                                value=(table, hq, hq_projection),
+                                output_name="dynamic_query",
+                                mapping_key=f"{table.name}_hq_{j}",
+                            )
                     else:
                         constraint_rules = get_constraint_rules(selector, year_id)
                         constraint_values = get_constraint_values(
@@ -107,31 +107,38 @@ def compose_queries(context):
             )
 
 
+# @op(
+#     ins={"dynamic_query": In(dagster_type=Tuple)},
+#     out={
+#         "table": Out(dagster_type=Any),
+#         "query": Out(dagster_type=Optional[String]),
+#         "projection": Out(dagster_type=Optional[String]),
+#     },
+# )
+# def split_dynamic_output(dynamic_query):
+#     table, query, projection = dynamic_query
+
+#     yield Output(value=table, output_name="table")
+#     yield Output(value=query, output_name="query")
+#     yield Output(value=projection, output_name="projection")
+
+
 @op(
+    # ins={"table": In(dagster_type=Any), "query": In(dagster_type=Optional[String])},
     ins={"dynamic_query": In(dagster_type=Tuple)},
     out={
         "table": Out(dagster_type=Any),
         "query": Out(dagster_type=Optional[String]),
         "projection": Out(dagster_type=Optional[String]),
-    },
-)
-def split_dynamic_output(dynamic_query):
-    table, query, projection = dynamic_query
-
-    yield Output(value=table, output_name="table")
-    yield Output(value=query, output_name="query")
-    yield Output(value=projection, output_name="projection")
-
-
-@op(
-    ins={"table": In(dagster_type=Any), "query": In(dagster_type=Optional[String])},
-    out={
         "count": Out(dagster_type=Int, is_required=False),
         "no_count": Out(dagster_type=Nothing, is_required=False),
     },
     retry_policy=RetryPolicy(max_retries=1, delay=1, backoff=Backoff.EXPONENTIAL),
 )
-def query_count(context, table, query):
+# def query_count(context, table, query):
+def query_count(context, dynamic_query):
+    table, query, projection = dynamic_query
+
     context.log.debug(f"{table.name}\n{query}")
 
     try:
@@ -142,6 +149,9 @@ def query_count(context, table, query):
     context.log.info(f"Found {count} records")
 
     if count > 0:
+        yield Output(value=table, output_name="table")
+        yield Output(value=query, output_name="query")
+        yield Output(value=projection, output_name="projection")
         yield Output(value=count, output_name="count")
     else:
         yield Output(value=None, output_name="no_count")
