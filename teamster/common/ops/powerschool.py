@@ -72,6 +72,7 @@ def compose_queries(context):
                         hist_query_exprs.reverse()
 
                         for j, hq in enumerate(hist_query_exprs):
+                            context.log.debug(hq)
                             hq_count = table.count(q=hq)
                             if hq_count > 0:
                                 yield DynamicOutput(
