@@ -10,6 +10,3 @@ resources:
   gcs_io:
     config:
       gcs_prefix: powerschool
-  gcs_fm:
-    config:
-      gcs_prefix: powerschool

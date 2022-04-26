@@ -65,13 +65,16 @@ def compose_queries(context):
                         if not max_value and selector[-2:] == "id":
                             max_value = table.count() * 1.5
 
+                        context.log.debug(f"max_value: {max_value}")
                         hist_query_exprs = generate_historical_queries(
-                            year_id, selector, max_value=max_value
+                            year_id, selector, max_value=int(max_value)
                         )
                         hist_query_exprs.reverse()
 
                         for j, hq in enumerate(hist_query_exprs):
-                            if table.count(q=hq) > 0:
+                            context.log.debug(f"hq: {hq}")
+                            hq_count = table.count(q=hq)
+                            if hq_count > 0:
                                 yield DynamicOutput(
                                     value=(table, hq, hq_projection),
                                     output_name="dynamic_query",
