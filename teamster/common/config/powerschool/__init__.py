@@ -1,6 +1,6 @@
 import os
 
-from dagster import Field, Array, Shape, Any, IntSource, String
+from dagster import Field, Array, Shape, Any, IntSource, String, ScalarUnion
 
 PS_QUERY_CONFIG = {
     "tables": Field(
@@ -14,11 +14,16 @@ PS_QUERY_CONFIG = {
                                 {
                                     "projection": Field(String, is_required=False),
                                     "q": Field(
-                                        Shape(
-                                            {
-                                                "selector": String,
-                                                "value": Field(Any, is_required=False),
-                                            }
+                                        ScalarUnion(
+                                            scalar_type=String,
+                                            non_scalar_schema=Shape(
+                                                {
+                                                    "selector": String,
+                                                    "value": Field(
+                                                        Any, is_required=False
+                                                    ),
+                                                }
+                                            ),
                                         ),
                                         is_required=False,
                                     ),
