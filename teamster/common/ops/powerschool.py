@@ -127,9 +127,9 @@ def compose_queries(context):
     # ins={"table": In(dagster_type=Any), "query": In(dagster_type=Optional[String])},
     ins={"dynamic_query": In(dagster_type=Tuple)},
     out={
-        "table": Out(dagster_type=Any),
-        "query": Out(dagster_type=Optional[String]),
-        "projection": Out(dagster_type=Optional[String]),
+        "table": Out(dagster_type=Any, is_required=False),
+        "query": Out(dagster_type=Optional[String], is_required=False),
+        "projection": Out(dagster_type=Optional[String], is_required=False),
         "count": Out(dagster_type=Int, is_required=False),
         "no_count": Out(dagster_type=Nothing, is_required=False),
     },
@@ -160,16 +160,14 @@ def query_count(context, dynamic_query):
 @op(
     ins={
         "table": In(dagster_type=Any),
+        "count": In(dagster_type=Int),
         "query": In(dagster_type=Optional[String]),
         "projection": In(dagster_type=Optional[String]),
-        "count": In(dagster_type=Int),
     },
-    out={
-        "data": Out(dagster_type=List[Dict], is_required=False, io_manager_key="gcs_io")
-    },
+    out={"data": Out(dagster_type=List[Dict], io_manager_key="gcs_io")},
     retry_policy=RetryPolicy(max_retries=1, delay=60, backoff=Backoff.EXPONENTIAL),
 )
-def query_data(context, table, query, projection, count):
+def query_data(context, table, count, query, projection):
     file_key_parts = [table.name, str(query or "")]
     file_stem = "_".join(filter(None, file_key_parts))
     file_ext = "json.gz"

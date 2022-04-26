@@ -13,7 +13,7 @@ def get_query_data(dynamic_query):
 
     # get data and save to data lake
     data = query_data(  # noqa: F841
-        table=table, query=query, projection=projection, count=count
+        table=table, count=count, query=query, projection=projection
     )
 
     # merge into db table
