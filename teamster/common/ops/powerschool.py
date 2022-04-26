@@ -1,6 +1,7 @@
 from dagster import op
 from dagster import Any, Dict, Int, List, Nothing, Optional, String, Tuple
 from dagster import In, Out, DynamicOut, Output, DynamicOutput
+from dagster import RetryRequested, RetryPolicy, Backoff
 from powerschool.utils import (
     generate_historical_queries,
     get_constraint_rules,
@@ -8,14 +9,16 @@ from powerschool.utils import (
     get_query_expression,
     transform_year_id,
 )
+from requests.exceptions import ConnectionError
 
 from teamster.common.config.powerschool import PS_QUERY_CONFIG
+from teamster.common.utils import time_limit
 
 
 @op(
     config_schema=PS_QUERY_CONFIG,
     out={"dynamic_query": DynamicOut(dagster_type=Tuple)},
-    required_resource_keys={"gcs_fm", "powerschool"},
+    required_resource_keys={"powerschool"},
 )
 def compose_queries(context):
     tables = context.op_config["tables"]
@@ -32,19 +35,16 @@ def compose_queries(context):
                 q = fq.get("q")
 
                 if isinstance(q, str):
-                    composed_query = q
+                    yield DynamicOutput(
+                        value=(table, q, fq_projection),
+                        output_name="dynamic_query",
+                        mapping_key=f"{table.name}_q_{i}",
+                    )
                 else:
                     selector = q.get("selector")
                     value = q.get("value", transform_year_id(year_id, selector))
 
-                    constraint_rules = get_constraint_rules(selector, year_id)
-                    constraint_values = get_constraint_values(
-                        selector, value, constraint_rules["step_size"]
-                    )
-                    composed_query = get_query_expression(selector, **constraint_values)
-
-                    # check if no data exists and generate historical queries
-                    if not context.resources.gcs_fm.blob_exists(file_key=table.name):
+                    if value == "resync":
                         context.log.info(
                             f"No data. Generating historical queries for {table.name}"
                         )
@@ -71,12 +71,20 @@ def compose_queries(context):
                                 output_name="dynamic_query",
                                 mapping_key=f"{table.name}_hq_{j}",
                             )
+                    else:
+                        constraint_rules = get_constraint_rules(selector, year_id)
+                        constraint_values = get_constraint_values(
+                            selector, value, constraint_rules["step_size"]
+                        )
+                        composed_query = get_query_expression(
+                            selector, **constraint_values
+                        )
 
-                yield DynamicOutput(
-                    value=(table, composed_query, fq_projection),
-                    output_name="dynamic_query",
-                    mapping_key=f"{table.name}_q_{i}",
-                )
+                        yield DynamicOutput(
+                            value=(table, composed_query, fq_projection),
+                            output_name="dynamic_query",
+                            mapping_key=f"{table.name}_q_{i}",
+                        )
         else:
             projection = next(
                 iter([pj["projection"] for pj in queries if pj.get("projection")]), None
@@ -109,19 +117,24 @@ def split_dynamic_output(dynamic_query):
     ins={"table": In(dagster_type=Any), "query": In(dagster_type=Optional[String])},
     out={
         "count": Out(dagster_type=Int, is_required=False),
-        "no_data": Out(dagster_type=Nothing, is_required=False),
+        "no_count": Out(dagster_type=Nothing, is_required=False),
     },
+    retry_policy=RetryPolicy(max_retries=1, delay=1, backoff=Backoff.EXPONENTIAL),
 )
 def query_count(context, table, query):
-    context.log.debug(f"{table.name}?q={query}")
+    context.log.debug(f"{table.name}\n{query}")
 
-    count = table.count(q=query)
+    try:
+        count = table.count(q=query)
+    except ConnectionError as e:
+        raise RetryRequested() from e
+
     context.log.info(f"Found {count} records")
 
     if count > 0:
         yield Output(value=count, output_name="count")
     else:
-        yield Output(value=None, output_name="no_data")
+        yield Output(value=None, output_name="no_count")
 
 
 @op(
@@ -132,11 +145,9 @@ def query_count(context, table, query):
         "count": In(dagster_type=Int),
     },
     out={
-        "data": Out(
-            dagster_type=List[Dict], is_required=False, io_manager_key="gcs_io"
-        ),
-        "count_error": Out(dagster_type=Nothing, is_required=False),
+        "data": Out(dagster_type=List[Dict], is_required=False, io_manager_key="gcs_io")
     },
+    retry_policy=RetryPolicy(max_retries=1, delay=60, backoff=Backoff.EXPONENTIAL),
 )
 def query_data(context, table, query, projection, count):
     file_key_parts = [table.name, str(query or "")]
@@ -145,12 +156,21 @@ def query_data(context, table, query, projection, count):
     file_key = f"{file_key_parts[0]}/{file_stem}.{file_ext}"
 
     context.log.debug(f"{table.name}\n{query}\n{projection}")
-    data = table.query(q=query, projection=projection)
+
+    try:
+        with time_limit(3600):
+            data = table.query(q=query, projection=projection)
+    except TimeoutError as e:
+        raise RetryRequested() from e
+    except ConnectionError as e:
+        raise RetryRequested() from e
 
     len_data = len(data)
     if len_data < count:
         updated_count = table.count(q=query)
         if len_data < updated_count:
-            yield Output(value=None, output_name="count_error")  # TODO: raise exception
+            raise RetryRequested(
+                f"Data received is less than count: {len_data} < {count}"
+            )
     else:
         yield Output(value=data, output_name="data", metadata={"file_key": file_key})

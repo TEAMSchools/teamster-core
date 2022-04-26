@@ -16,7 +16,7 @@ def get_query_data(dynamic_query):
     count, no_data = query_count(table=table, query=query)
 
     # get data and save to data lake
-    data, count_error = query_data(
+    data = query_data(  # noqa: F841
         table=table, query=query, projection=projection, count=count
     )
 
