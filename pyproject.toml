@@ -6,10 +6,10 @@ authors = [
     {name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com"},
 ]
 dependencies = [
-    "dagster-cloud>=0.14.12",
-    "dagster>=0.14.12",
-    "powerschool>=3.3.0",
-    "dagster-gcp>=0.13",
+    "dagster-cloud",
+    "dagster",
+    "dagster-gcp",
+    "powerschool",
 ]
 requires-python = ">=3.9"
 license = {text = "GPL-3.0-or-later"}
@@ -23,10 +23,10 @@ homepage = ""
 [tool.pdm]
 [tool.pdm.dev-dependencies]
 dev = [
-    "black>=21.11b0",
-    "flake8>=4.0.1",
-    "setuptools>=62.1.0",
-    "dagster-docker>=0.14.12",
+    "black",
+    "flake8",
+    "setuptools",
+    "dagster-docker",
 ]
 
 [build-system]
