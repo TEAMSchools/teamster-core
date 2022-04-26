@@ -71,11 +71,12 @@ def compose_queries(context):
                         hist_query_exprs.reverse()
 
                         for j, hq in enumerate(hist_query_exprs):
-                            yield DynamicOutput(
-                                value=(table, hq, hq_projection),
-                                output_name="dynamic_query",
-                                mapping_key=f"{table.name}_hq_{j}",
-                            )
+                            if table.count(q=hq) > 0:
+                                yield DynamicOutput(
+                                    value=(table, hq, hq_projection),
+                                    output_name="dynamic_query",
+                                    mapping_key=f"{table.name}_hq_{j}",
+                                )
                     else:
                         constraint_rules = get_constraint_rules(selector, year_id)
                         constraint_values = get_constraint_values(
@@ -91,6 +92,7 @@ def compose_queries(context):
                             mapping_key=f"{table.name}_q_{i}",
                         )
         else:
+            # use 1st listed projection if present
             projection = next(
                 iter([pj["projection"] for pj in queries if pj.get("projection")]), None
             )
