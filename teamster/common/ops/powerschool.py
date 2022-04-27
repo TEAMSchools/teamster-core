@@ -74,7 +74,10 @@ def compose_queries(context):
                         )
 
                         hq_expressions = generate_historical_queries(
-                            selector, start_value=max_value, **constraint_rules
+                            selector,
+                            start_value=max_value,
+                            stop_value=constraint_rules["stop_value"],
+                            step_size=100000
                         )
                         hq_expressions.reverse()
 
