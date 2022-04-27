@@ -2,7 +2,7 @@ import os
 
 from dagster import Field, Array, Shape, Any, IntSource, String, ScalarUnion
 
-PS_QUERY_CONFIG = {
+COMPOSE_QUERIES_CONFIG = {
     "tables": Field(
         Array(
             Shape(

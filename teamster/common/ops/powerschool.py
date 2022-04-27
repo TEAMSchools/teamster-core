@@ -1,6 +1,6 @@
 from dagster import op
 from dagster import Any, Dict, Int, List, Nothing, Optional, String, Tuple
-from dagster import In, Out, DynamicOut, Output, DynamicOutput
+from dagster import Field, In, Out, DynamicOut, Output, DynamicOutput
 from dagster import RetryRequested, RetryPolicy, Backoff
 from powerschool.utils import (
     generate_historical_queries,
@@ -11,12 +11,12 @@ from powerschool.utils import (
 )
 from requests.exceptions import ConnectionError
 
-from teamster.common.config.powerschool import PS_QUERY_CONFIG
+from teamster.common.config.powerschool import COMPOSE_QUERIES_CONFIG
 from teamster.common.utils import time_limit
 
 
 @op(
-    config_schema=PS_QUERY_CONFIG,
+    config_schema=COMPOSE_QUERIES_CONFIG,
     out={"dynamic_query": DynamicOut(dagster_type=Tuple)},
     required_resource_keys={"powerschool"},
 )
@@ -155,6 +155,7 @@ def query_count(context, dynamic_query):
     },
     out={"data": Out(dagster_type=List[Dict], io_manager_key="gcs_io")},
     retry_policy=RetryPolicy(max_retries=1, delay=60, backoff=Backoff.EXPONENTIAL),
+    config_schema={"query_timeout": Field(Int, is_required=False, default_value=1800)},
 )
 def query_data(context, table, count, query, projection):
     file_key_parts = [table.name, str(query or "")]
@@ -165,7 +166,7 @@ def query_data(context, table, count, query, projection):
     context.log.debug(f"{table.name}\n{query}\n{projection}")
 
     try:
-        with time_limit(1800):
+        with time_limit(context.op_config["query_timeout"]):
             data = table.query(q=query, projection=projection)
     except TimeoutError as e:
         raise RetryRequested() from e
