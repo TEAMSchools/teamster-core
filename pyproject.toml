@@ -9,7 +9,7 @@ dependencies = [
     "dagster>=0.14.12",
     "dagster-cloud>=0.14.12",
     "dagster-gcp>=0.14.12",
-    "powerschool>=3.4.1",
+    "powerschool>=3.5",
 ]
 requires-python = ">=3.9"
 license = {text = "GPL-3.0-or-later"}

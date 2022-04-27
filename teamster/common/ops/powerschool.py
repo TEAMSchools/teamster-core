@@ -64,17 +64,21 @@ def compose_queries(context):
                         # set max historical value for "id" queries to 1.5x count
                         if not max_value and selector[-2:] == "id":
                             max_value = int(table.count() * 1.5)
+                        elif not max_value:
+                            max_value = transform_year_id(year_id, selector)
                         context.log.debug(f"max_value: {max_value}")
 
-                        hist_query_exprs = generate_historical_queries(
-                            year_id, selector, max_value=max_value
+                        # get step and stoppage critera for constraint type
+                        constraint_rules = get_constraint_rules(
+                            selector, year_id=year_id, is_historical=True
                         )
-                        hist_query_exprs.reverse()
 
-                        for j, hq in enumerate(hist_query_exprs):
-                            # context.log.debug(hq)
-                            # hq_count = table.count(q=hq)
-                            # if hq_count > 0:
+                        hq_expressions = generate_historical_queries(
+                            selector, start_value=max_value, **constraint_rules
+                        )
+                        hq_expressions.reverse()
+
+                        for j, hq in enumerate(hq_expressions):
                             yield DynamicOutput(
                                 value=(table, hq, hq_projection),
                                 output_name="dynamic_query",
@@ -107,24 +111,7 @@ def compose_queries(context):
             )
 
 
-# @op(
-#     ins={"dynamic_query": In(dagster_type=Tuple)},
-#     out={
-#         "table": Out(dagster_type=Any),
-#         "query": Out(dagster_type=Optional[String]),
-#         "projection": Out(dagster_type=Optional[String]),
-#     },
-# )
-# def split_dynamic_output(dynamic_query):
-#     table, query, projection = dynamic_query
-
-#     yield Output(value=table, output_name="table")
-#     yield Output(value=query, output_name="query")
-#     yield Output(value=projection, output_name="projection")
-
-
 @op(
-    # ins={"table": In(dagster_type=Any), "query": In(dagster_type=Optional[String])},
     ins={"dynamic_query": In(dagster_type=Tuple)},
     out={
         "table": Out(dagster_type=Any, is_required=False),
@@ -135,7 +122,6 @@ def compose_queries(context):
     },
     retry_policy=RetryPolicy(max_retries=1, delay=1, backoff=Backoff.EXPONENTIAL),
 )
-# def query_count(context, table, query):
 def query_count(context, dynamic_query):
     table, query, projection = dynamic_query
 

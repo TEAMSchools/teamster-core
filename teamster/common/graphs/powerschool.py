@@ -4,11 +4,7 @@ from teamster.common.ops.powerschool import compose_queries, query_count, query_
 
 @graph
 def get_query_data(dynamic_query):
-    # split DynamicOutput
-    # table, query, projection = split_dynamic_output(dynamic_query=dynamic_query)
-
-    # get expected record count, end if 0
-    # count, no_data = query_count(table=table, query=query)
+    # split DynamicOutput and get record count, end if 0
     table, query, projection, count, no_count = query_count(dynamic_query=dynamic_query)
 
     # get data and save to data lake
