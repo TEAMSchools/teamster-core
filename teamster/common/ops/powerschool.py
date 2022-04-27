@@ -77,7 +77,7 @@ def compose_queries(context):
                             selector,
                             start_value=max_value,
                             stop_value=constraint_rules["stop_value"],
-                            step_size=100000
+                            step_size=100000,
                         )
                         hq_expressions.reverse()
 
@@ -165,7 +165,7 @@ def query_data(context, table, count, query, projection):
     context.log.debug(f"{table.name}\n{query}\n{projection}")
 
     try:
-        with time_limit(7200):
+        with time_limit(1800):
             data = table.query(q=query, projection=projection)
     except TimeoutError as e:
         raise RetryRequested() from e
