@@ -10,3 +10,7 @@ resources:
   gcs_io:
     config:
       gcs_prefix: powerschool
+execution:
+  config:
+    multiprocess:
+      max_concurrent: 50
