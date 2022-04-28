@@ -9,8 +9,7 @@ dependencies = [
     "dagster>=0.14.12",
     "dagster-cloud>=0.14.12",
     "dagster-gcp>=0.14.12",
-    "powerschool>=3.5",
-]
+    "powerschool>=3.5"]
 requires-python = ">=3.9"
 license = {text = "GPL-3.0-or-later"}
 
@@ -45,6 +44,7 @@ docker-push.shell = "docker push ${IMAGE_URI}"
 dagster-docker.env_file = "./env/stg.env"
 dagster-docker.shell = 'dagster-cloud agent run --deployment stg --agent-token ${DAGSTER_CLOUD_AGENT_TOKEN} --user-code-launcher "dagster_cloud.workspace.docker.DockerUserCodeLauncher"'
 dagster-local.shell = "docker-compose run --rm dagster dagster-cloud agent run ."
-dagster-sync.shell = "bash ./.deploy/dagster-cloud-workspace-sync.sh"
+dagster-sync.shell = "bash ./.dagster/dagster-cloud-workspace-sync.sh"
+dagster-alerts.shell = "dagster-cloud deployment alert-policies sync -a ./.dagster/alert-policies.yaml"
 gh-wi-sa.shell = "bash ./.google/gh-wi-sa.sh"
-gh-location.shell = "envsubst < ./.deploy/cloud-workspace-gh.yaml.tmpl > ./.deploy/cloud-workspace-gh.yaml"
+gh-location.shell = "envsubst < ./.dagster/cloud-workspace-gh.yaml.tmpl > ./.dagster/cloud-workspace-gh.yaml"

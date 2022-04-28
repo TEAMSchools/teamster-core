@@ -64,12 +64,17 @@ ENV/
 env.bak/
 venv.bak/
 
-# custom additions
-.git/
+# teamster additions
+.dagster/
 .docker/
+.git/
+.github/
+.google/
 .vscode/
 history/
 schedules/
-config/
+secrets/
 .gitignore
+
+# core additions
 teamster/local/

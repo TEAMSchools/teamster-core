@@ -163,10 +163,12 @@ cython_debug/
 .docker
 history/
 schedules/
+secrets/
+teamster/local/
 deployment-old.yaml
 deployment-new.yaml
 deployment-patch.yaml
-!env/
-*.env
 cloud-workspace-*.yaml
-teamster/local/
+*.env
+
+!env/
