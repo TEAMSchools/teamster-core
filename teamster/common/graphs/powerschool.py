@@ -1,18 +1,16 @@
 from dagster import graph
-from teamster.common.ops.powerschool import compose_queries, query_count, query_data
+from teamster.common.ops.powerschool import compose_queries, get_count, get_data
 
 
 @graph
-def get_query_data(dynamic_query):
+def query_data(dynamic_query):
     # split DynamicOutput and get record count, end if 0
-    table, query, projection, count, no_count = query_count(dynamic_query=dynamic_query)
+    table, query, projection, count, no_count = get_count(dynamic_query=dynamic_query)
 
     # get data and save to data lake
-    data = query_data(  # noqa: F841
+    data = get_data(  # noqa: F841
         table=table, count=count, query=query, projection=projection
     )
-
-    # merge into db table
 
 
 @graph
@@ -21,4 +19,4 @@ def run_queries():
     dynamic_queries = compose_queries()
 
     # run sub-graph for each query
-    dynamic_queries.map(get_query_data)
+    dynamic_queries.map(query_data)

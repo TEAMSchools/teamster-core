@@ -1,5 +1,8 @@
+import os
 import signal
 from contextlib import contextmanager
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 
 @contextmanager
@@ -13,3 +16,6 @@ def time_limit(seconds):
         yield
     finally:
         signal.alarm(0)
+
+
+TODAY = datetime.now(ZoneInfo(os.getenv("LOCAL_TIMEZONE")))

@@ -12,7 +12,7 @@ from powerschool.utils import (
 from requests.exceptions import ConnectionError
 
 from teamster.common.config.powerschool import COMPOSE_QUERIES_CONFIG
-from teamster.common.utils import time_limit
+from teamster.common.utils import TODAY, time_limit
 
 
 @op(
@@ -44,6 +44,9 @@ def compose_queries(context):
                 else:
                     selector = q.get("selector")
                     value = q.get("value", transform_year_id(year_id, selector))
+
+                    if value == "today":
+                        value = TODAY.date().isoformat()
 
                     if value == "resync":
                         context.log.info(
@@ -125,7 +128,7 @@ def compose_queries(context):
     },
     retry_policy=RetryPolicy(max_retries=1, delay=1, backoff=Backoff.EXPONENTIAL),
 )
-def query_count(context, dynamic_query):
+def get_count(context, dynamic_query):
     table, query, projection = dynamic_query
 
     context.log.debug(f"{table.name}\n{query}")
@@ -157,7 +160,7 @@ def query_count(context, dynamic_query):
     retry_policy=RetryPolicy(max_retries=1, delay=60, backoff=Backoff.EXPONENTIAL),
     config_schema={"query_timeout": Field(Int, is_required=False, default_value=1800)},
 )
-def query_data(context, table, count, query, projection):
+def get_data(context, table, count, query, projection):
     file_key_parts = [table.name, str(query or "")]
     file_stem = "_".join(filter(None, file_key_parts))
     file_ext = "json.gz"
@@ -169,8 +172,10 @@ def query_data(context, table, count, query, projection):
         with time_limit(context.op_config["query_timeout"]):
             data = table.query(q=query, projection=projection)
     except TimeoutError as e:
+        context.log.debug(e)
         raise RetryRequested() from e
     except ConnectionError as e:
+        context.log.debug(e)
         raise RetryRequested() from e
 
     len_data = len(data)
