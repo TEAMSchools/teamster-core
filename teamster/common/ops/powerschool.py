@@ -27,11 +27,12 @@ def compose_queries(context):
     for tbl in tables:
         table = context.resources.powerschool.get_schema_table(tbl["name"])
         queries = tbl.get("queries", {})
+        projection = tbl.get("projection")
 
         filtered_queries = [fq for fq in queries if fq.get("q")]
         if filtered_queries:
             for i, fq in enumerate(filtered_queries):
-                fq_projection = fq.get("projection")
+                fq_projection = fq.get("projection", projection)
                 q = fq.get("q")
 
                 if isinstance(q, str):
@@ -102,11 +103,6 @@ def compose_queries(context):
                             mapping_key=f"{table.name}_q_{i}",
                         )
         else:
-            # use 1st listed projection if present
-            projection = next(
-                iter([pj["projection"] for pj in queries if pj.get("projection")]), None
-            )
-
             yield DynamicOutput(
                 value=(table, None, projection),
                 output_name="dynamic_query",

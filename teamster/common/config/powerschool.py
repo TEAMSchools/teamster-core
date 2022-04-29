@@ -8,6 +8,7 @@ COMPOSE_QUERIES_CONFIG = {
             Shape(
                 {
                     "name": String,
+                    "projection": Field(String, is_required=False),
                     "queries": Field(
                         Array(
                             Shape(
