@@ -75,7 +75,7 @@ def compose_queries(context):
                         )
 
                         hq_expressions = generate_historical_queries(
-                            selector,
+                            selector=selector,
                             start_value=max_value,
                             stop_value=constraint_rules["stop_value"],
                             step_size=100000,
@@ -89,12 +89,16 @@ def compose_queries(context):
                                 mapping_key=f"{table.name}_hq_{j}",
                             )
                     else:
-                        constraint_rules = get_constraint_rules(selector, year_id)
+                        constraint_rules = get_constraint_rules(
+                            selector=selector, year_id=year_id
+                        )
                         constraint_values = get_constraint_values(
-                            selector, value, constraint_rules["step_size"]
+                            selector=selector,
+                            value=value,
+                            step_size=constraint_rules["step_size"],
                         )
                         composed_query = get_query_expression(
-                            selector, **constraint_values
+                            selector=selector, **constraint_values
                         )
 
                         yield DynamicOutput(
