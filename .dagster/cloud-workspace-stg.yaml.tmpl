@@ -8,7 +8,7 @@ locations:
       docker:
         container_kwargs:
           volumes:
-            ${PWD}/teamster:
+            ${PWD}/teamster:  # changed from template
               bind: /root/app/teamster
               mode: rw
         env_vars:
