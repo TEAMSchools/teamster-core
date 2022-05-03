@@ -38,7 +38,8 @@ COMPOSE_QUERIES_CONFIG = {
                     ),
                 }
             )
-        )
+        ),
+        is_required=False,
     ),
     "year_id": Field(
         IntSource,
