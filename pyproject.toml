@@ -24,7 +24,6 @@ homepage = ""
 dev = [
     "black>=22.3",
     "flake8>=4.0.1",
-    "setuptools>=62.1",
     "dagster-docker>=0.14.12",
 ]
 
