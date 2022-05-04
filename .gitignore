@@ -159,12 +159,10 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-# custom additions
-.docker
+# custom exclusions
+.docker/
 history/
-schedules/
 secrets/
-teamster/local/
 deployment-old.yaml
 deployment-new.yaml
 deployment-patch.yaml
@@ -172,4 +170,8 @@ cloud-workspace-prod.yaml
 cloud-workspace-stg.yaml
 *.env
 
+# custom inclusions
 !env/
+
+# core exclusions
+teamster/local/
