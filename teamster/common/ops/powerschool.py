@@ -1,3 +1,5 @@
+import re
+
 from dagster import op
 from dagster import Any, Dict, Int, List, Nothing, Optional, String, Tuple
 from dagster import Field, In, Out, DynamicOut, Output, DynamicOutput
@@ -29,7 +31,9 @@ def compose_queries(context):
         queries = tbl.get("queries", {})
         projection = tbl.get("projection")
 
+        table_name = re.sub("[^A-Za-z0-9]", "_", table.name)
         filtered_queries = [fq for fq in queries if fq.get("q")]
+
         if filtered_queries:
             for i, fq in enumerate(filtered_queries):
                 fq_projection = fq.get("projection", projection)
@@ -39,7 +43,7 @@ def compose_queries(context):
                     yield DynamicOutput(
                         value=(table, q, fq_projection),
                         output_name="dynamic_query",
-                        mapping_key=f"{table.name}_q_{i}",
+                        mapping_key=f"{table_name}_q_{i}",
                     )
                 else:
                     selector = q.get("selector")
@@ -50,7 +54,7 @@ def compose_queries(context):
 
                     if value == "resync":
                         context.log.info(
-                            f"Generating historical queries for {table.name}"
+                            f"Generating historical queries for {table_name}"
                         )
 
                         hq_projection = next(
@@ -107,13 +111,13 @@ def compose_queries(context):
                         yield DynamicOutput(
                             value=(table, composed_query, fq_projection),
                             output_name="dynamic_query",
-                            mapping_key=f"{table.name}_q_{i}",
+                            mapping_key=f"{table_name}_q_{i}",
                         )
         else:
             yield DynamicOutput(
                 value=(table, None, projection),
                 output_name="dynamic_query",
-                mapping_key=table.name,
+                mapping_key=table_name,
             )
 
 
