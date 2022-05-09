@@ -141,6 +141,8 @@ def get_count(context, dynamic_query):
         count = table.count(q=query)
     except ConnectionError as e:
         raise RetryRequested() from e
+    except Exception as e:
+        raise e
 
     context.log.info(f"Found {count} records")
 
@@ -181,6 +183,8 @@ def get_data(context, table, count, query, projection):
     except ConnectionError as e:
         context.log.debug(e)
         raise RetryRequested() from e
+    except Exception as e:
+        raise e
 
     len_data = len(data)
     if len_data < count:
