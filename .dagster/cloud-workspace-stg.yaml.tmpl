@@ -8,9 +8,12 @@ locations:
       docker:
         container_kwargs:
           volumes:
-            ${PWD}/teamster:  # changed from template
+            # modified from template
+            ${PWD}/teamster:
               bind: /root/app/teamster
               mode: rw
+            ${PWD}/secrets:
+              bind: /root/app/secrets
         env_vars:
           - INSTANCE_NAME
           - IMAGE_NAME
@@ -20,3 +23,4 @@ locations:
           - POWERSCHOOL_CLIENT_ID
           - POWERSCHOOL_CLIENT_SECRET
           - POWERSCHOOL_YEAR_ID
+          - LOCAL_TIMEZONE

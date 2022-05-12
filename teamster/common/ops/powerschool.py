@@ -1,9 +1,23 @@
+import gzip
+import json
+import math
+import pathlib
 import re
+import shutil
 
-from dagster import op
-from dagster import Any, Dict, Int, List, Nothing, Optional, String, Tuple
-from dagster import Field, In, Out, DynamicOut, Output, DynamicOutput
-from dagster import RetryRequested, RetryPolicy, Backoff
+from dagster.builtins import Any, Int, Nothing, String
+from dagster.config import Field
+from dagster.core.definitions.decorators import op
+from dagster.core.definitions.events import DynamicOutput, Output, RetryRequested
+from dagster.core.definitions.input import In
+from dagster.core.definitions.output import DynamicOut, Out
+from dagster.core.definitions.policy import Backoff, RetryPolicy
+from dagster.core.types.dagster_type import Optional
+from dagster.core.types.python_tuple import Tuple
+from requests.exceptions import ConnectionError, HTTPError
+from teamster.common.config.powerschool import COMPOSE_QUERIES_CONFIG
+from teamster.common.utils import TODAY, time_limit
+
 from powerschool.utils import (
     generate_historical_queries,
     get_constraint_rules,
@@ -11,10 +25,6 @@ from powerschool.utils import (
     get_query_expression,
     transform_year_id,
 )
-from requests.exceptions import ConnectionError
-
-from teamster.common.config.powerschool import COMPOSE_QUERIES_CONFIG
-from teamster.common.utils import TODAY, time_limit
 
 
 @op(
@@ -69,14 +79,14 @@ def compose_queries(context):
                         )
 
                         max_value = q.get("max_value")
-                        # set max historical value for "id" queries to 1.5x count
                         if not max_value and selector[-2:] == "id":
-                            max_value = int(table.count() * 1.5)
+                            max_value = int(
+                                table.count() * 1.5
+                            )  # set max historical value for "id" queries to 1.5x count
                         elif not max_value:
                             max_value = transform_year_id(year_id, selector)
                         context.log.debug(f"max_value: {max_value}")
 
-                        # get step and stoppage critera for constraint type
                         constraint_rules = get_constraint_rules(
                             selector, year_id=year_id, is_historical=True
                         )
@@ -128,6 +138,7 @@ def compose_queries(context):
         "query": Out(dagster_type=Optional[String], is_required=False),
         "projection": Out(dagster_type=Optional[String], is_required=False),
         "count": Out(dagster_type=Int, is_required=False),
+        "n_pages": Out(dagster_type=Int, is_required=False),
         "no_count": Out(dagster_type=Nothing, is_required=False),
     },
     retry_policy=RetryPolicy(max_retries=1, delay=1, backoff=Backoff.EXPONENTIAL),
@@ -135,7 +146,9 @@ def compose_queries(context):
 def get_count(context, dynamic_query):
     table, query, projection = dynamic_query
 
-    context.log.debug(f"{table.name}\n{query}")
+    context.log.debug(
+        f"table:\t\t{table.name}\nq:\t\t{query}\nprojection:\t{projection}\n"
+    )
 
     try:
         count = table.count(q=query)
@@ -144,13 +157,16 @@ def get_count(context, dynamic_query):
     except Exception as e:
         raise e
 
-    context.log.info(f"Found {count} records")
+    n_pages = math.ceil(count / table.client.metadata.schema_table_query_max_page_size)
+
+    context.log.debug(f"count:\t\t{count}\ntotal pages:\t{n_pages}")
 
     if count > 0:
         yield Output(value=table, output_name="table")
         yield Output(value=query, output_name="query")
         yield Output(value=projection, output_name="projection")
         yield Output(value=count, output_name="count")
+        yield Output(value=n_pages, output_name="n_pages")
     else:
         yield Output(value=None, output_name="no_count")
 
@@ -158,40 +174,74 @@ def get_count(context, dynamic_query):
 @op(
     ins={
         "table": In(dagster_type=Any),
-        "count": In(dagster_type=Int),
+        "n_pages": In(dagster_type=Int),
         "query": In(dagster_type=Optional[String]),
         "projection": In(dagster_type=Optional[String]),
     },
-    out={"data": Out(dagster_type=List[Dict], io_manager_key="gcs_io")},
+    out={"gcs_path": Out(dagster_type=String)},
+    required_resource_keys={"gcs_fm"},
     retry_policy=RetryPolicy(max_retries=1, delay=60, backoff=Backoff.EXPONENTIAL),
-    config_schema={"query_timeout": Field(Int, is_required=False, default_value=1800)},
+    config_schema={"query_timeout": Field(Int, is_required=False, default_value=60)},
 )
-def get_data(context, table, count, query, projection):
+def get_data(context, table, query, projection, count, n_pages):
+    data_dir = pathlib.Path("data").absolute()
+    file_dir = data_dir / table.name
+    if not file_dir.exists():
+        file_dir.mkdir(parents=True)
+
+    file_ext = "json"
     file_key_parts = [table.name, str(query or "")]
+
     file_stem = "_".join(filter(None, file_key_parts))
-    file_ext = "json.gz"
-    file_key = f"{file_key_parts[0]}/{file_stem}.{file_ext}"
 
-    context.log.debug(f"{table.name}\n{query}\n{projection}")
+    file_key = f"{table.name}/{file_stem}.{file_ext}"
 
-    try:
-        with time_limit(context.op_config["query_timeout"]):
-            data = table.query(q=query, projection=projection)
-    except TimeoutError as e:
-        context.log.debug(e)
-        raise RetryRequested() from e
-    except ConnectionError as e:
-        context.log.debug(e)
-        raise RetryRequested() from e
-    except Exception as e:
-        raise e
+    data_len = 0
+    for p in range(n_pages):
+        context.log.debug(f"page:\t\t{(p + 1)}/{n_pages}")
 
-    len_data = len(data)
-    if len_data < count:
+        try:
+            with time_limit(context.op_config["query_timeout"]):
+                data = table.query(q=query, projection=projection, page=(p + 1))
+        except (TimeoutError, ConnectionError, HTTPError) as e:
+            context.log.debug(e)
+            # retry page before retrying entire Op
+            try:
+                with time_limit(context.op_config["query_timeout"]):
+                    data = table.query(q=query, projection=projection, page=(p + 1))
+            except (TimeoutError, ConnectionError, HTTPError) as e:
+                context.log.debug(e)
+                raise RetryRequested() from e
+        except Exception as e:
+            raise e
+
+        data_len += len(data)
+
+        tmp_file_path = data_dir / file_key
+        if p == 0:
+            with tmp_file_path.open(mode="wt", encoding="utf-8") as f_tmp:
+                json.dump(data, f_tmp)
+        else:
+            with tmp_file_path.open(mode="at", encoding="utf-8") as f_tmp:
+                f_tmp.seek(0, 2)
+                position = f_tmp.tell() - 1
+                f_tmp.seek(position)
+                f_tmp.write(f", {json.dumps(data)[1:-1]}]")
+
+    if data_len < count:
         updated_count = table.count(q=query)
-        if len_data < updated_count:
+        if data_len < updated_count:
             raise RetryRequested(
-                f"Data received is less than count: {len_data} < {count}"
+                f"Data received is less than count: {data_len} < {count}"
             )
     else:
-        yield Output(value=data, output_name="data", metadata={"file_key": file_key})
+        gz_file_path = data_dir / (file_key + ".gz")
+        with tmp_file_path.open(mode="rt", encoding="utf-8") as f_tmp:
+            with gzip.open(gz_file_path, mode="wt", encoding="utf-8") as f_gz:
+                shutil.copyfileobj(f_tmp, f_gz)
+
+        gcs_fh = context.resources.gcs_fm.upload(
+            gz_file_path, file_key=(file_key + ".gz")
+        )
+
+        yield Output(value=gcs_fh.gcs_path, output_name="gcs_path")

@@ -1,9 +1,5 @@
 resources:
-  gcs:
-    config:
-      project:
-        env: GCP_PROJECT_ID
-  gcs_io:
+  gcs_fm:
     config:
       gcs_bucket:
         env: IMAGE_NAME

@@ -1,38 +1,18 @@
 import gzip
 import json
+import uuid
 
-from dagster import DagsterEventType, Field, StringSource, io_manager, resource
+from dagster.config import Field
+from dagster.config.source import StringSource
+from dagster.core.definitions import resource
+from dagster.core.events import DagsterEventType
+from dagster.core.storage.io_manager import io_manager
 from dagster.utils.backoff import backoff
 from dagster.utils.merger import merge_dicts
+from dagster_gcp.gcs.file_manager import GCSFileHandle, GCSFileManager
 from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager
-from dagster_gcp.gcs.file_manager import GCSFileManager
-from dagster_gcp.gcs.resources import GCS_CLIENT_CONFIG
-
+from dagster_gcp.gcs.resources import GCS_CLIENT_CONFIG, _gcs_client_from_config
 from google.api_core.exceptions import Forbidden, TooManyRequests
-from google.cloud import storage
-
-GCS_CLIENT_CONFIG["gcs_credentials"] = Field(StringSource, is_required=False)
-
-
-class GCSFileManager(GCSFileManager):
-    def __init__(self, client, gcs_bucket, gcs_base_key):
-        super().__init__(client, gcs_bucket, gcs_base_key)
-
-    def blob_exists(self, file_key, ext=None):
-        gcs_key = self.get_full_key(file_key + (("." + ext) if ext is not None else ""))
-
-        blobs_list = self._client.list_blobs(
-            bucket_or_name=self._gcs_bucket, prefix=gcs_key
-        )
-
-        try:
-            blob_match = [bl for bl in blobs_list if gcs_key in bl.name]
-            if blob_match:
-                return True
-            else:
-                return False
-        except AttributeError:
-            return False
 
 
 class JsonGzObjectGCSIOManager(PickledObjectGCSIOManager):
@@ -97,31 +77,6 @@ class JsonGzObjectGCSIOManager(PickledObjectGCSIOManager):
         )
 
 
-def _gcs_client_from_config(config):
-    """
-    Args:
-        config: A configuration containing the fields in GCS_CLIENT_CONFIG.
-    Returns: A GCS client.
-    """
-    project = config.get("project", None)
-    credentials = config.get("gcs_credentials", None)
-
-    if credentials:
-        return storage.Client.from_service_account_json(
-            json_credentials_path=credentials
-        )
-    else:
-        return storage.client.Client(project=project)
-
-
-@resource(
-    GCS_CLIENT_CONFIG,
-    description="This resource provides a GCS client",
-)
-def gcs_resource(init_context):
-    return _gcs_client_from_config(init_context.resource_config)
-
-
 @io_manager(
     config_schema={
         "gcs_bucket": Field(StringSource),
@@ -157,6 +112,20 @@ def gcs_jsongz_io_manager(init_context):
         init_context.resource_config["gcs_prefix"],
     )
     return json_io_manager
+
+
+class GCSFileManager(GCSFileManager):
+    def __init__(self, client, gcs_bucket, gcs_base_key):
+        super().__init__(client, gcs_bucket, gcs_base_key)
+
+    def upload(self, file_path, ext=None, file_key=None):
+        # check_file_like_obj(file_obj)
+        gcs_key = self.get_full_key(
+            file_key or (str(uuid.uuid4()) + (("." + ext) if ext is not None else ""))
+        )
+        bucket_obj = self._client.bucket(self._gcs_bucket)
+        bucket_obj.blob(gcs_key).upload_from_filename(file_path)
+        return GCSFileHandle(self._gcs_bucket, gcs_key)
 
 
 @resource(

@@ -6,10 +6,11 @@ authors = [
     {name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com"},
 ]
 dependencies = [
-    "dagster>=0.14.12",
-    "dagster-cloud>=0.14.12",
-    "dagster-gcp>=0.14.12",
-    "powerschool>=3.5"]
+    "dagster>=0.14.14",
+    "dagster-cloud>=0.14.14",
+    "dagster-gcp>=0.14.14",
+    "powerschool>=3.6"
+]
 requires-python = ">=3.9"
 license = {text = "GPL-3.0-or-later"}
 
@@ -22,9 +23,9 @@ homepage = ""
 [tool.pdm]
 [tool.pdm.dev-dependencies]
 dev = [
-    "black>=22.3",
     "flake8>=4.0.1",
-    "dagster-docker>=0.14.12",
+    "dagster-docker>=0.14.14",
+    "black>=22.3.0",
 ]
 
 [build-system]
@@ -32,18 +33,15 @@ requires = ["pdm-pep517>=0.12.0"]
 build-backend = "pdm.pep517.api"
 
 [tool.pdm.scripts]
-_.env_file = "./env/prod.env"
+_.env_file = "./env/stg.env"
 env-setup.env_file = "./env/.env"
 env-setup.shell = "bash ./env/envsubst-file.sh"
-k8s-secret.shell = "kubectl create secret generic ${INSTANCE_NAME} --save-config --dry-run=client --from-env-file ./env/prod.env --namespace dagster-cloud -o yaml | kubectl apply -f -"
 docker-build.shell = "docker-compose build"
 docker-bash.shell = "docker-compose run --rm dagster bash"
 docker-run.shell = "docker-compose run --rm dagster dagster-cloud agent run ."
 docker-push.shell = "docker push ${IMAGE_URI}"
-dagster-docker.env_file = "./env/stg.env"
+pre_dagster-docker.shell = "pdm run env-setup stg"
 dagster-docker.shell = 'dagster-cloud agent run --deployment stg --agent-token ${DAGSTER_CLOUD_AGENT_TOKEN} --user-code-launcher "dagster_cloud.workspace.docker.DockerUserCodeLauncher"'
 dagster-local.shell = "docker-compose run --rm dagster dagster-cloud agent run ."
 dagster-sync.shell = "bash ./.dagster/dagster-cloud-workspace-sync.sh"
-dagster-alerts.shell = "dagster-cloud deployment alert-policies sync -a ./.dagster/alert-policies.yaml"
 gh-wi-sa.shell = "bash ./.google/gh-wi-sa.sh"
-gh-location.shell = "envsubst < ./.dagster/cloud-workspace-gh.yaml.tmpl > ./.dagster/cloud-workspace-gh.yaml"
