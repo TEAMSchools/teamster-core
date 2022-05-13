@@ -160,6 +160,7 @@ def get_count(context, dynamic_query):
         f"table:\t\t{table.name}\nq:\t\t{query}\nprojection:\t{projection}\n"
     )
 
+    # TODO: make relative date last run from schedule
     transaction_query = ";".join(
         [
             f"transaction_date=ge={YESTERDAY.date().isoformat()}",
@@ -168,23 +169,20 @@ def get_count(context, dynamic_query):
     )
     with time_limit(context.op_config["query_timeout"]):
         try:
-            # TODO: make relative date last run from schedule
             transaction_count = table.count(q=transaction_query)
         except HTTPError as e:
             if str(e) == '{"message":"Invalid field transaction_date"}':
-                transaction_count = 1
+                transaction_count = table.count(q=query)
             else:
                 raise e
         except (TimeoutError, ConnectionError, HTTPError) as e:
             context.log.debug(e)
-            # retry page before retrying entire Op
             try:
                 with time_limit(context.op_config["query_timeout"]):
-                    # TODO: make relative date last run from schedule
                     transaction_count = table.count(q=transaction_query)
             except HTTPError as e:
                 if str(e) == '{"message":"Invalid field transaction_date"}':
-                    transaction_count = 1
+                    transaction_count = table.count(q=query)
                 else:
                     raise e
             except (TimeoutError, ConnectionError, HTTPError) as e:
