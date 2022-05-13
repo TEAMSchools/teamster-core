@@ -5,19 +5,24 @@ import pathlib
 import re
 import shutil
 
-from dagster.builtins import Any, Int, Nothing, String
-from dagster.config import Field
-from dagster.core.definitions.decorators import op
-from dagster.core.definitions.events import DynamicOutput, Output, RetryRequested
-from dagster.core.definitions.input import In
-from dagster.core.definitions.output import DynamicOut, Out
-from dagster.core.definitions.policy import Backoff, RetryPolicy
-from dagster.core.types.dagster_type import Optional
-from dagster.core.types.python_tuple import Tuple
-from requests.exceptions import ConnectionError, HTTPError
-from teamster.common.config.powerschool import COMPOSE_QUERIES_CONFIG
-from teamster.common.utils import TODAY, YESTERDAY, time_limit
-
+from dagster import (
+    Any,
+    Backoff,
+    DynamicOut,
+    DynamicOutput,
+    Field,
+    In,
+    Int,
+    Nothing,
+    Optional,
+    Out,
+    Output,
+    RetryPolicy,
+    RetryRequested,
+    String,
+    Tuple,
+    op,
+)
 from powerschool.utils import (
     generate_historical_queries,
     get_constraint_rules,
@@ -25,6 +30,10 @@ from powerschool.utils import (
     get_query_expression,
     transform_year_id,
 )
+from requests.exceptions import ConnectionError, HTTPError
+
+from teamster.common.config.powerschool import COMPOSE_QUERIES_CONFIG
+from teamster.common.utils import TODAY, YESTERDAY, time_limit
 
 
 @op(
@@ -150,20 +159,28 @@ def get_count(context, dynamic_query):
         f"table:\t\t{table.name}\nq:\t\t{query}\nprojection:\t{projection}\n"
     )
 
-    try:
-        if query:
+    transaction_query = ";".join(
+        [
+            f"transaction_date=ge={YESTERDAY.date().isoformat()}",
+            str(query or ""),
+        ]
+    )
+    with time_limit(context.op_config["query_timeout"]):
+        try:
             # TODO: make relative date last run from schedule
-            update_count = table.count(
-                q=f"{query};transaction_date=ge={YESTERDAY.date().isoformat()}"
-            )
-        else:
-            update_count = 1
-    except ConnectionError as e:
-        raise RetryRequested() from e
-    except Exception as e:
-        raise e
+            transaction_count = table.count(q=transaction_query)
+        except (TimeoutError, ConnectionError, HTTPError) as e:
+            context.log.debug(e)
+            # retry page before retrying entire Op
+            try:
+                with time_limit(context.op_config["query_timeout"]):
+                    # TODO: make relative date last run from schedule
+                    transaction_count = table.count(q=transaction_query)
+            except (TimeoutError, ConnectionError, HTTPError) as e:
+                context.log.debug(e)
+                raise RetryRequested() from e
 
-    if update_count > 0:
+    if transaction_count > 0:
         try:
             query_count = table.count(q=query)
         except ConnectionError as e:
