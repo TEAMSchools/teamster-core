@@ -151,6 +151,7 @@ def compose_queries(context):
         "no_count": Out(dagster_type=Nothing, is_required=False),
     },
     retry_policy=RetryPolicy(max_retries=1, delay=1, backoff=Backoff.EXPONENTIAL),
+    config_schema={"query_timeout": Field(Int, is_required=False, default_value=60)},
 )
 def get_count(context, dynamic_query):
     table, query, projection = dynamic_query
