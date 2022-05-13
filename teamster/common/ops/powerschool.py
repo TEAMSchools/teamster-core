@@ -151,10 +151,13 @@ def get_count(context, dynamic_query):
     )
 
     try:
-        # TODO: make relative date last run from schedule
-        update_count = table.count(
-            q=f"{query};transaction_date=ge={YESTERDAY.date().isoformat()}"
-        )
+        if query:
+            # TODO: make relative date last run from schedule
+            update_count = table.count(
+                q=f"{query};transaction_date=ge={YESTERDAY.date().isoformat()}"
+            )
+        else:
+            update_count = 1
     except ConnectionError as e:
         raise RetryRequested() from e
     except Exception as e:
@@ -201,7 +204,7 @@ def get_data(context, table, query, projection, count, n_pages):
     file_dir = data_dir / table.name
     if not file_dir.exists():
         file_dir.mkdir(parents=True)
-        context.log.debug()
+        context.log.info(f"Created folder {file_dir}")
 
     file_ext = "json"
     file_key_parts = [table.name, str(query or "")]
