@@ -16,7 +16,7 @@ from dagster.core.types.dagster_type import Optional
 from dagster.core.types.python_tuple import Tuple
 from requests.exceptions import ConnectionError, HTTPError
 from teamster.common.config.powerschool import COMPOSE_QUERIES_CONFIG
-from teamster.common.utils import TODAY, time_limit
+from teamster.common.utils import TODAY, YESTERDAY, time_limit
 
 from powerschool.utils import (
     generate_historical_queries,
@@ -146,26 +146,38 @@ def compose_queries(context):
 def get_count(context, dynamic_query):
     table, query, projection = dynamic_query
 
-    context.log.debug(
+    context.log.info(
         f"table:\t\t{table.name}\nq:\t\t{query}\nprojection:\t{projection}\n"
     )
 
     try:
-        count = table.count(q=query)
+        # TODO: make relative date last run from schedule
+        update_count = table.count(
+            q=f"{query};transaction_date=ge={YESTERDAY.date().isoformat()}"
+        )
     except ConnectionError as e:
         raise RetryRequested() from e
     except Exception as e:
         raise e
 
-    n_pages = math.ceil(count / table.client.metadata.schema_table_query_max_page_size)
+    if update_count > 0:
+        try:
+            query_count = table.count(q=query)
+        except ConnectionError as e:
+            raise RetryRequested() from e
+        except Exception as e:
+            raise e
 
-    context.log.debug(f"count:\t\t{count}\ntotal pages:\t{n_pages}")
+        n_pages = math.ceil(
+            query_count / table.client.metadata.schema_table_query_max_page_size
+        )
 
-    if count > 0:
+        context.log.info(f"count:\t\t{query_count}\ntotal pages:\t{n_pages}")
+
         yield Output(value=table, output_name="table")
         yield Output(value=query, output_name="query")
         yield Output(value=projection, output_name="projection")
-        yield Output(value=count, output_name="count")
+        yield Output(value=query_count, output_name="count")
         yield Output(value=n_pages, output_name="n_pages")
     else:
         yield Output(value=None, output_name="no_count")
@@ -185,9 +197,11 @@ def get_count(context, dynamic_query):
 )
 def get_data(context, table, query, projection, count, n_pages):
     data_dir = pathlib.Path("data").absolute()
+
     file_dir = data_dir / table.name
     if not file_dir.exists():
         file_dir.mkdir(parents=True)
+        context.log.debug()
 
     file_ext = "json"
     file_key_parts = [table.name, str(query or "")]
@@ -198,7 +212,9 @@ def get_data(context, table, query, projection, count, n_pages):
 
     data_len = 0
     for p in range(n_pages):
-        context.log.debug(f"page:\t\t{(p + 1)}/{n_pages}")
+        context.log.debug(
+            f"table:\t{table.name}\nq:\t{query}\npage:\t{(p + 1)}/{n_pages}"
+        )
 
         try:
             with time_limit(context.op_config["query_timeout"]):

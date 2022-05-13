@@ -1,7 +1,7 @@
 import os
 import signal
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 
@@ -19,3 +19,4 @@ def time_limit(seconds):
 
 
 TODAY = datetime.now(ZoneInfo(os.getenv("LOCAL_TIMEZONE")))
+YESTERDAY = TODAY - timedelta(days=1)
