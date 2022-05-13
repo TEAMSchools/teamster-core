@@ -170,6 +170,11 @@ def get_count(context, dynamic_query):
         try:
             # TODO: make relative date last run from schedule
             transaction_count = table.count(q=transaction_query)
+        except HTTPError as e:
+            if str(e) == '{"message":"Invalid field transaction_date"}':
+                transaction_count = 1
+            else:
+                raise e
         except (TimeoutError, ConnectionError, HTTPError) as e:
             context.log.debug(e)
             # retry page before retrying entire Op
@@ -177,6 +182,11 @@ def get_count(context, dynamic_query):
                 with time_limit(context.op_config["query_timeout"]):
                     # TODO: make relative date last run from schedule
                     transaction_count = table.count(q=transaction_query)
+            except HTTPError as e:
+                if str(e) == '{"message":"Invalid field transaction_date"}':
+                    transaction_count = 1
+                else:
+                    raise e
             except (TimeoutError, ConnectionError, HTTPError) as e:
                 context.log.debug(e)
                 raise RetryRequested() from e
@@ -240,13 +250,13 @@ def get_data(context, table, query, projection, count, n_pages):
         try:
             with time_limit(context.op_config["query_timeout"]):
                 data = table.query(q=query, projection=projection, page=(p + 1))
-        except (TimeoutError, ConnectionError, HTTPError) as e:
+        except (TimeoutError, ConnectionError) as e:
             context.log.debug(e)
             # retry page before retrying entire Op
             try:
                 with time_limit(context.op_config["query_timeout"]):
                     data = table.query(q=query, projection=projection, page=(p + 1))
-            except (TimeoutError, ConnectionError, HTTPError) as e:
+            except (TimeoutError, ConnectionError) as e:
                 context.log.debug(e)
                 raise RetryRequested() from e
         except Exception as e:
