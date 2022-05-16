@@ -60,7 +60,7 @@ def compose_queries(context):
 
                 if isinstance(q, str):
                     yield DynamicOutput(
-                        value=(table, q, fq_projection),
+                        value=(table, q, fq_projection, False),
                         output_name="dynamic_query",
                         mapping_key=f"{table_name}_q_{i}",
                     )
@@ -110,7 +110,7 @@ def compose_queries(context):
 
                         for j, hq in enumerate(hq_expressions):
                             yield DynamicOutput(
-                                value=(table, hq, hq_projection),
+                                value=(table, hq, hq_projection, True),
                                 output_name="dynamic_query",
                                 mapping_key=f"{table.name}_hq_{j}",
                             )
@@ -128,13 +128,13 @@ def compose_queries(context):
                         )
 
                         yield DynamicOutput(
-                            value=(table, composed_query, fq_projection),
+                            value=(table, composed_query, fq_projection, False),
                             output_name="dynamic_query",
                             mapping_key=f"{table_name}_q_{i}",
                         )
         else:
             yield DynamicOutput(
-                value=(table, None, projection),
+                value=(table, None, projection, False),
                 output_name="dynamic_query",
                 mapping_key=table_name,
             )
@@ -154,19 +154,23 @@ def compose_queries(context):
     config_schema={"query_timeout": Field(Int, is_required=False, default_value=60)},
 )
 def get_count(context, dynamic_query):
-    table, query, projection = dynamic_query
+    table, query, projection, is_resync = dynamic_query
 
     context.log.info(
         f"table:\t\t{table.name}\nq:\t\t{query}\nprojection:\t{projection}\n"
     )
 
     # TODO: make relative date last run from schedule
-    transaction_query = ";".join(
-        [
-            f"transaction_date=ge={YESTERDAY.date().isoformat()}",
-            str(query or ""),
-        ]
-    )
+    if is_resync:
+        transaction_query = query
+    else:
+        transaction_query = ";".join(
+            [
+                f"transaction_date=ge={YESTERDAY.date().isoformat()}",
+                str(query or ""),
+            ]
+        )
+
     with time_limit(context.op_config["query_timeout"]):
         try:
             transaction_count = table.count(q=transaction_query)
