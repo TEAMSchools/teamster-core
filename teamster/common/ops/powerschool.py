@@ -223,6 +223,7 @@ def get_count(context, dynamic_query):
     required_resource_keys={"gcs_fm"},
     retry_policy=RetryPolicy(max_retries=1, delay=60, backoff=Backoff.EXPONENTIAL),
     config_schema={"query_timeout": Field(Int, is_required=False, default_value=60)},
+    tags={"dagster/priority": 1},
 )
 def get_data(context, table, query, projection, count, n_pages):
     data_dir = pathlib.Path("data").absolute()
