@@ -30,7 +30,7 @@ from powerschool.utils import (
     get_query_expression,
     transform_year_id,
 )
-from requests.exceptions import ConnectionError, HTTPError
+from requests.exceptions import HTTPError
 
 from teamster.common.config.powerschool import COMPOSE_QUERIES_CONFIG
 from teamster.common.utils import TODAY, YESTERDAY, time_limit
@@ -140,6 +140,37 @@ def compose_queries(context):
             )
 
 
+def table_count(context, table, query):
+    try:
+        return table.count(q=query)
+    except Exception as e:
+        context.log.error(e)
+        raise e
+
+
+def time_limit_count(context, table, query, count_type="query", is_resync=False):
+    # TODO: make relative date last run from schedule
+    if is_resync:
+        return 1
+    elif count_type == "transaction":
+        query = ";".join(
+            [
+                f"transaction_date=ge={YESTERDAY.date().isoformat()}",
+                str(query or ""),
+            ]
+        )
+
+    with time_limit(context.op_config["query_timeout"]):
+        try:
+            return table_count(context=context, table=table, query=query)
+        except HTTPError as e:
+            if str(e) == '{"message":"Invalid field transaction_date"}':
+                # proceed to original query count
+                return 1
+            else:
+                raise e
+
+
 @op(
     ins={"dynamic_query": In(dagster_type=Tuple)},
     out={
@@ -160,46 +191,24 @@ def get_count(context, dynamic_query):
         f"table:\t\t{table.name}\nq:\t\t{query}\nprojection:\t{projection}\n"
     )
 
-    # TODO: make relative date last run from schedule
-    if is_resync:
-        transaction_query = query
-    else:
-        transaction_query = ";".join(
-            [
-                f"transaction_date=ge={YESTERDAY.date().isoformat()}",
-                str(query or ""),
-            ]
+    try:
+        # count query records updated since last run
+        transaction_count = time_limit_count(
+            context=context,
+            table=table,
+            query=query,
+            count_type="transaction",
+            is_resync=is_resync,
         )
-
-    with time_limit(context.op_config["query_timeout"]):
-        try:
-            transaction_count = table.count(q=transaction_query)
-        except HTTPError as e:
-            if str(e) == '{"message":"Invalid field transaction_date"}':
-                transaction_count = table.count(q=query)
-            else:
-                raise e
-        except (TimeoutError, ConnectionError, HTTPError) as e:
-            context.log.debug(e)
-            try:
-                with time_limit(context.op_config["query_timeout"]):
-                    transaction_count = table.count(q=transaction_query)
-            except HTTPError as e:
-                if str(e) == '{"message":"Invalid field transaction_date"}':
-                    transaction_count = table.count(q=query)
-                else:
-                    raise e
-            except (TimeoutError, ConnectionError, HTTPError) as e:
-                context.log.debug(e)
-                raise RetryRequested() from e
+    except Exception as e:
+        raise RetryRequested() from e
 
     if transaction_count > 0:
         try:
-            query_count = table.count(q=query)
-        except ConnectionError as e:
-            raise RetryRequested() from e
+            # count all records in query
+            query_count = time_limit_count(context=context, table=table, query=query)
         except Exception as e:
-            raise e
+            raise RetryRequested() from e
 
         n_pages = math.ceil(
             query_count / table.client.metadata.schema_table_query_max_page_size
@@ -214,6 +223,39 @@ def get_count(context, dynamic_query):
         yield Output(value=n_pages, output_name="n_pages")
     else:
         yield Output(value=None, output_name="no_count")
+
+
+def table_data(context, table, query, projection, page):
+    try:
+        return table.query(q=query, projection=projection, page=page)
+    except Exception as e:
+        context.log.error(e)
+        raise e
+
+
+def time_limit_data(context, table, query, projection, page, retry=False):
+    with time_limit(context.op_config["query_timeout"]):
+        try:
+            return table_data(
+                context=context,
+                table=table,
+                query=query,
+                projection=projection,
+                page=page,
+            )
+        except Exception as e:
+            if retry:
+                raise e
+            else:
+                # retry page before retrying entire Op
+                return time_limit_data(
+                    context=context,
+                    table=table,
+                    query=query,
+                    projection=projection,
+                    page=page,
+                    retry=True,
+                )
 
 
 @op(
@@ -251,19 +293,15 @@ def get_data(context, table, query, projection, count, n_pages):
         )
 
         try:
-            with time_limit(context.op_config["query_timeout"]):
-                data = table.query(q=query, projection=projection, page=(p + 1))
-        except (TimeoutError, ConnectionError) as e:
-            context.log.debug(e)
-            # retry page before retrying entire Op
-            try:
-                with time_limit(context.op_config["query_timeout"]):
-                    data = table.query(q=query, projection=projection, page=(p + 1))
-            except (TimeoutError, ConnectionError) as e:
-                context.log.debug(e)
-                raise RetryRequested() from e
+            data = time_limit_data(
+                context=context,
+                table=table,
+                query=query,
+                projection=projection,
+                page=(p + 1),
+            )
         except Exception as e:
-            raise e
+            raise RetryRequested() from e
 
         data_len += len(data)
 
