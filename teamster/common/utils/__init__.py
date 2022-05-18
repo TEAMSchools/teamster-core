@@ -40,15 +40,32 @@ def time_limit(seconds):
 #     return runs[0] if runs else None
 
 
-def get_last_successful_schedule_run(context):
-    query = (
-        "query { runsOrError( filter: { statuses: [SUCCESS]\n"
-        f'pipelineName: "{context.job_name}"\n'
-        'tags: { key: "dagster/schedule_name"\n'
-        'value: "'
-        f'{context.get_tag(key="dagster/schedule_name")}'
-        '"}} limit: 1 ) { ... on Runs { results { startTime }}}}'
-    )
+def gql_last_schedule_run(context):
+    gql_query = """
+        query LastRun($job_name: String!, $schedule_name: String!) {
+        runsOrError(
+            filter: {
+            statuses: [SUCCESS]
+            pipelineName: $job_name
+            tags: { key: "dagster/schedule_name", value: $schedule_name }
+            }
+            limit: 1
+        ) {
+            ... on Runs {
+            results {
+                startTime
+            }
+            }
+        }
+        }
+    """
+    gql_variables = {
+        "job_name": context.job_name,
+        "schedule_name": context.get_tag(key="dagster/schedule_name"),
+    }
 
-    client = DagsterGraphQLClient("localhost", port_number=3000)
-    return client._execute(query=query)
+    client = DagsterGraphQLClient("kipptaf.dagster.cloud/prod")
+    response = client._execute(query=gql_query, variables=gql_variables)
+    results = response["data"]["runsOrError"]["results"]
+    start_time = results[0]["startTime"] if results else None
+    return start_time

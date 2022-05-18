@@ -33,7 +33,7 @@ from powerschool.utils import (
 from requests.exceptions import HTTPError
 
 from teamster.common.config.powerschool import COMPOSE_QUERIES_CONFIG
-from teamster.common.utils import TODAY, time_limit, get_last_successful_schedule_run
+from teamster.common.utils import TODAY, time_limit, gql_last_schedule_run
 
 
 @op(
@@ -138,7 +138,7 @@ def table_count(context, table, query):
 
 
 def time_limit_count(context, table, query, count_type="query", is_resync=False):
-    context.log.debug(get_last_successful_schedule_run(context))
+    context.log.debug(gql_last_schedule_run(context))
 
     # TODO: make relative date last run from schedule
     if is_resync:
