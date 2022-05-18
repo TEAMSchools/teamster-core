@@ -73,7 +73,7 @@ def compose_queries(context):
 
                     if value == "resync":
                         context.log.info(
-                            f"Generating historical queries for {table_name}"
+                            f"Generating historical queries for {table_name}."
                         )
 
                         hq_projection = next(
@@ -94,7 +94,7 @@ def compose_queries(context):
                             )  # set max historical value for "id" queries to 1.5x count
                         elif not max_value:
                             max_value = transform_year_id(year_id, selector)
-                        context.log.debug(f"max_value: {max_value}")
+                        context.log.debug(f"max_value:\t{max_value}")
 
                         constraint_rules = get_constraint_rules(
                             selector, year_id=year_id, is_historical=True
@@ -151,6 +151,8 @@ def table_count(context, table, query):
 def time_limit_count(context, table, query, count_type="query", is_resync=False):
     # TODO: make relative date last run from schedule
     if is_resync:
+        # proceed to original query count
+        context.log.info("Resync - Skipping transaction_date count.")
         return 1
     elif count_type == "transaction":
         query = ";".join(
@@ -166,6 +168,7 @@ def time_limit_count(context, table, query, count_type="query", is_resync=False)
         except HTTPError as e:
             if str(e) == '{"message":"Invalid field transaction_date"}':
                 # proceed to original query count
+                context.log.info("Skipping transaction_date count.")
                 return 1
             else:
                 raise e
@@ -225,7 +228,7 @@ def get_count(context, dynamic_query):
         yield Output(value=None, output_name="no_count")
 
 
-def table_data(context, table, query, projection, page):
+def table_query(context, table, query, projection, page):
     try:
         return table.query(q=query, projection=projection, page=page)
     except Exception as e:
@@ -233,10 +236,10 @@ def table_data(context, table, query, projection, page):
         raise e
 
 
-def time_limit_data(context, table, query, projection, page, retry=False):
+def time_limit_query(context, table, query, projection, page, retry=False):
     with time_limit(context.op_config["query_timeout"]):
         try:
-            return table_data(
+            return table_query(
                 context=context,
                 table=table,
                 query=query,
@@ -248,7 +251,7 @@ def time_limit_data(context, table, query, projection, page, retry=False):
                 raise e
             else:
                 # retry page before retrying entire Op
-                return time_limit_data(
+                return time_limit_query(
                     context=context,
                     table=table,
                     query=query,
@@ -277,7 +280,7 @@ def get_data(context, table, query, projection, count, n_pages):
     file_dir = data_dir / table.name
     if not file_dir.exists():
         file_dir.mkdir(parents=True)
-        context.log.info(f"Created folder {file_dir}")
+        context.log.info(f"Created folder {file_dir}.")
 
     file_ext = "json"
     file_key_parts = [table.name, str(query or "")]
@@ -293,7 +296,7 @@ def get_data(context, table, query, projection, count, n_pages):
         )
 
         try:
-            data = time_limit_data(
+            data = time_limit_query(
                 context=context,
                 table=table,
                 query=query,
