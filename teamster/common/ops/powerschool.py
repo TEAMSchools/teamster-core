@@ -138,7 +138,7 @@ def table_count(context, table, query):
 
 
 def time_limit_count(context, table, query, count_type="query", is_resync=False):
-    context.log.debug(get_last_successful_schedule_run(context._asdict()))
+    context.log.debug(get_last_successful_schedule_run(context)._asdict())
 
     # TODO: make relative date last run from schedule
     if is_resync:
