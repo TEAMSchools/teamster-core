@@ -4,8 +4,7 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-# from dagster.core.storage.pipeline_run import RunsFilter, DagsterRunStatus
-from dagster_graphql import DagsterGraphQLClient
+from dagster.core.storage.pipeline_run import RunsFilter, DagsterRunStatus
 
 LOCAL_TIMEZONE = ZoneInfo(os.getenv("LOCAL_TIMEZONE"))
 TODAY = datetime.now(tz=LOCAL_TIMEZONE)
@@ -25,47 +24,20 @@ def time_limit(seconds):
         signal.alarm(0)
 
 
-# def get_last_successful_schedule_run(context):
-#     runs = context.instance.get_runs(
-#         filters=RunsFilter(
-#             statuses=[DagsterRunStatus.SUCCESS],
-#             job_name=context.job_name,
-#             tags={
-#                 "dagster/schedule_name": context.get_tag(key="dagster/schedule_name")
-#             },
-#         ),
-#         limit=1,
-#     )
-
-#     return runs[0] if runs else None
-
-
 def gql_last_schedule_run(context):
-    gql_query = """
-        query LastRun($job_name: String!, $schedule_name: String!) {
-        runsOrError(
-            filter: {
-            statuses: [SUCCESS]
-            pipelineName: $job_name
-            tags: { key: "dagster/schedule_name", value: $schedule_name }
-            }
-            limit: 1
-        ) {
-            ... on Runs {
-            results {
-                startTime
-            }
-            }
-        }
-        }
-    """
-    gql_variables = {
-        "job_name": context.job_name,
-        "schedule_name": context.get_tag(key="dagster/schedule_name"),
-    }
+    runs = context.instance.get_run_records(
+        filters=RunsFilter(
+            statuses=[DagsterRunStatus.SUCCESS],
+            job_name=context.job_name,
+            tags={
+                "dagster/schedule_name": context.get_tag(key="dagster/schedule_name")
+            },
+        ),
+        limit=1,
+    )
 
-    client = DagsterGraphQLClient("kipptaf.dagster.cloud/prod")
-    response = client._execute(query=gql_query, variables=gql_variables)
-    results = response["data"]["runsOrError"]["results"]
-    start_time = results[0]["startTime"] if results else None
-    return start_time
+    last_run = runs[0] if runs else None
+    if last_run:
+        return last_run.create_timestamp.astimezone(LOCAL_TIMEZONE)
+    else:
+        return TODAY

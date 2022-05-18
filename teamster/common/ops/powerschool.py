@@ -138,9 +138,8 @@ def table_count(context, table, query):
 
 
 def time_limit_count(context, table, query, count_type="query", is_resync=False):
-    context.log.debug(gql_last_schedule_run(context))
-
     # TODO: make relative date last run from schedule
+    context.log.debug(gql_last_schedule_run(context))
     if is_resync:
         # proceed to original query count
         context.log.info("Resync - Skipping transaction_date count.")
@@ -148,7 +147,8 @@ def time_limit_count(context, table, query, count_type="query", is_resync=False)
     elif count_type == "transaction":
         query = ";".join(
             [
-                f"transaction_date=ge={context.op_config['transaction_date']}",
+                "transaction_date=ge="
+                + gql_last_schedule_run(context).date().isoformat(),
                 str(query or ""),
             ]
         )
