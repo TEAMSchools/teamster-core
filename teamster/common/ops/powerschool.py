@@ -33,7 +33,7 @@ from powerschool.utils import (
 from requests.exceptions import HTTPError
 
 from teamster.common.config.powerschool import COMPOSE_QUERIES_CONFIG
-from teamster.common.utils import TODAY, YESTERDAY, time_limit
+from teamster.common.utils import TODAY, time_limit
 
 
 @op(
@@ -157,7 +157,7 @@ def time_limit_count(context, table, query, count_type="query", is_resync=False)
     elif count_type == "transaction":
         query = ";".join(
             [
-                f"transaction_date=ge={YESTERDAY.date().isoformat()}",
+                f"transaction_date=ge={context.op_config['transaction_date']}",
                 str(query or ""),
             ]
         )
@@ -185,7 +185,10 @@ def time_limit_count(context, table, query, count_type="query", is_resync=False)
         "no_count": Out(dagster_type=Nothing, is_required=False),
     },
     retry_policy=RetryPolicy(max_retries=1, delay=1, backoff=Backoff.EXPONENTIAL),
-    config_schema={"query_timeout": Field(Int, is_required=False, default_value=60)},
+    config_schema={
+        "transaction_date": Field(String, default_value=TODAY.date().isoformat()),
+        "query_timeout": Field(Int, is_required=False, default_value=60),
+    },
 )
 def get_count(context, dynamic_query):
     table, query, projection, is_resync = dynamic_query
