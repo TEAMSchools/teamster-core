@@ -18,5 +18,6 @@ def time_limit(seconds):
         signal.alarm(0)
 
 
-TODAY = datetime.now(ZoneInfo(os.getenv("LOCAL_TIMEZONE")))
+LOCAL_TIMEZONE = ZoneInfo(os.getenv("LOCAL_TIMEZONE"))
+TODAY = datetime.now(tz=LOCAL_TIMEZONE)
 YESTERDAY = TODAY - timedelta(days=1)
