@@ -33,7 +33,7 @@ from powerschool.utils import (
 from requests.exceptions import HTTPError
 
 from teamster.common.config.powerschool import COMPOSE_QUERIES_CONFIG
-from teamster.common.utils import TODAY, time_limit
+from teamster.common.utils import TODAY, time_limit, get_last_successful_schedule_run
 
 
 @op(
@@ -76,17 +76,6 @@ def compose_queries(context):
                             f"Generating historical queries for {table_name}."
                         )
 
-                        hq_projection = next(
-                            iter(
-                                [
-                                    pj["projection"]
-                                    for pj in queries
-                                    if pj.get("projection")
-                                ]
-                            ),
-                            None,
-                        )
-
                         max_value = q.get("max_value")
                         if not max_value and selector[-2:] == "id":
                             max_value = int(
@@ -110,7 +99,7 @@ def compose_queries(context):
 
                         for j, hq in enumerate(hq_expressions):
                             yield DynamicOutput(
-                                value=(table, hq, hq_projection, True),
+                                value=(table, hq, fq_projection, True),
                                 output_name="dynamic_query",
                                 mapping_key=f"{table.name}_hq_{j}",
                             )
@@ -149,6 +138,8 @@ def table_count(context, table, query):
 
 
 def time_limit_count(context, table, query, count_type="query", is_resync=False):
+    context.log.debug(get_last_successful_schedule_run(context._asdict()))
+
     # TODO: make relative date last run from schedule
     if is_resync:
         # proceed to original query count
@@ -185,10 +176,7 @@ def time_limit_count(context, table, query, count_type="query", is_resync=False)
         "no_count": Out(dagster_type=Nothing, is_required=False),
     },
     retry_policy=RetryPolicy(max_retries=1, delay=1, backoff=Backoff.EXPONENTIAL),
-    config_schema={
-        "transaction_date": Field(String, default_value=TODAY.date().isoformat()),
-        "query_timeout": Field(Int, is_required=False, default_value=60),
-    },
+    config_schema={"query_timeout": Field(Int, is_required=False, default_value=60)},
 )
 def get_count(context, dynamic_query):
     table, query, projection, is_resync = dynamic_query
