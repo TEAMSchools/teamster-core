@@ -11,6 +11,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "aniso8601"
+version = "7.0.0"
+summary = "A library for parsing ISO 8601 strings."
+
+[[package]]
 name = "black"
 version = "22.3.0"
 requires_python = ">=3.6.2"
@@ -33,6 +38,7 @@ summary = "Extensible memoizing collections and decorators"
 [[package]]
 name = "certifi"
 version = "2021.10.8"
+requires_python = ">=3.5"
 summary = "Python package for providing Mozilla's CA Bundle."
 
 [[package]]
@@ -144,6 +150,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "dagster-graphql"
+version = "0.14.15"
+summary = "The GraphQL frontend to python dagster."
+dependencies = [
+    "dagster==0.14.15",
+    "gql<3",
+    "graphene<3,>=2.1.3",
+    "graphql-core<3,>=2.1",
+    "requests",
+]
+
+[[package]]
 name = "dagster-pandas"
 version = "0.14.15"
 summary = "Utilities and examples for working with pandas and dagster, an opinionated framework for expressing data pipelines"
@@ -243,7 +261,7 @@ dependencies = [
 
 [[package]]
 name = "google-cloud-bigquery"
-version = "1.19.0"
+version = "1.20.0"
 requires_python = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*"
 summary = "Google BigQuery API client library"
 dependencies = [
@@ -264,7 +282,7 @@ dependencies = [
 
 [[package]]
 name = "google-cloud-storage"
-version = "2.2.0"
+version = "2.2.1"
 requires_python = ">=3.7"
 summary = "Google Cloud Storage API client library"
 dependencies = [
@@ -298,6 +316,48 @@ requires_python = ">=3.6"
 summary = "Common protobufs used in Google APIs"
 dependencies = [
     "protobuf>=3.15.0",
+]
+
+[[package]]
+name = "gql"
+version = "2.0.0"
+summary = "GraphQL client for Python"
+dependencies = [
+    "graphql-core<3,>=2.3.2",
+    "promise<3,>=2.3",
+    "requests<3,>=2.12",
+    "six>=1.10.0",
+]
+
+[[package]]
+name = "graphene"
+version = "2.1.9"
+summary = "GraphQL Framework for Python"
+dependencies = [
+    "aniso8601<=7,>=3",
+    "graphql-core<3,>=2.1",
+    "graphql-relay<3,>=2",
+    "six<2,>=1.10.0",
+]
+
+[[package]]
+name = "graphql-core"
+version = "2.3.2"
+summary = "GraphQL implementation for Python"
+dependencies = [
+    "promise<3,>=2.3",
+    "rx<2,>=1.6",
+    "six>=1.10.0",
+]
+
+[[package]]
+name = "graphql-relay"
+version = "2.0.1"
+summary = "Relay implementation for Python"
+dependencies = [
+    "graphql-core<3,>=2.2",
+    "promise<3,>=2.2",
+    "six>=1.12",
 ]
 
 [[package]]
@@ -468,6 +528,14 @@ dependencies = [
     "python-dateutil>=2.8.2",
     "requests-oauthlib>=1.3.1",
     "requests>=2.27.1",
+]
+
+[[package]]
+name = "promise"
+version = "2.3"
+summary = "Promises/A+ implementation for Python"
+dependencies = [
+    "six",
 ]
 
 [[package]]
@@ -730,12 +798,16 @@ summary = "WebSocket client for Python with low level API options"
 
 [metadata]
 lock_version = "3.1"
-content_hash = "sha256:1c5b38f1274118297ffca75578d65eb4a5f9554bba89603bb2e8b6daabf8e26f"
+content_hash = "sha256:3ac7829c06104f65491b30959ba38702508bf1d0c22eb840b7feacb0639b7377"
 
 [metadata.files]
 "alembic 1.6.5" = [
     {file = "alembic-1.6.5-py2.py3-none-any.whl", hash = "sha256:e78be5b919f5bb184e3e0e2dd1ca986f2362e29a2bc933c446fe89f39dbe4e9c"},
     {file = "alembic-1.6.5.tar.gz", hash = "sha256:a21fedebb3fb8f6bbbba51a11114f08c78709377051384c9c5ead5705ee93a51"},
+]
+"aniso8601 7.0.0" = [
+    {file = "aniso8601-7.0.0-py2.py3-none-any.whl", hash = "sha256:d10a4bf949f619f719b227ef5386e31f49a2b6d453004b21f02661ccc8670c7b"},
+    {file = "aniso8601-7.0.0.tar.gz", hash = "sha256:513d2b6637b7853806ae79ffaca6f3e8754bdd547048f5ccc1420aec4b714f1e"},
 ]
 "black 22.3.0" = [
     {file = "black-22.3.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:2497f9c2386572e28921fa8bec7be3e51de6801f7459dffd6e62492531c47e09"},
@@ -806,6 +878,10 @@ content_hash = "sha256:1c5b38f1274118297ffca75578d65eb4a5f9554bba89603bb2e8b6daa
     {file = "dagster_gcp-0.14.15-py3-none-any.whl", hash = "sha256:1f8c84ce6959dfe8cf94251747f94cad4675b86742d9bf66aec47b1c004ac33a"},
     {file = "dagster-gcp-0.14.15.tar.gz", hash = "sha256:9b31009b47bf734b79fb5b8c602aa1a5d3dce2f84af63a92c5d0d33c1a63f52c"},
 ]
+"dagster-graphql 0.14.15" = [
+    {file = "dagster_graphql-0.14.15-py3-none-any.whl", hash = "sha256:3ecb130d3305be020ee26234fa02ef5e9b0606bc5d01de9f1c0bf2aa470c6f82"},
+    {file = "dagster-graphql-0.14.15.tar.gz", hash = "sha256:2378317f4adf43f73507ef908eaf8faa058aa134bf551784478ef8c49c3aa372"},
+]
 "dagster-pandas 0.14.15" = [
     {file = "dagster_pandas-0.14.15-py3-none-any.whl", hash = "sha256:05c32c2c3b54225345c2b4ba75e00878d65d07db060f70e08f672da907e705ba"},
     {file = "dagster-pandas-0.14.15.tar.gz", hash = "sha256:43d3e1361880f6abebf636b03f4d4572885b2e15e2ff19937a240da596b309cd"},
@@ -845,17 +921,17 @@ content_hash = "sha256:1c5b38f1274118297ffca75578d65eb4a5f9554bba89603bb2e8b6daa
     {file = "google_auth_httplib2-0.1.0-py2.py3-none-any.whl", hash = "sha256:31e49c36c6b5643b57e82617cb3e021e3e1d2df9da63af67252c02fa9c1f4a10"},
     {file = "google-auth-httplib2-0.1.0.tar.gz", hash = "sha256:a07c39fd632becacd3f07718dfd6021bf396978f03ad3ce4321d060015cc30ac"},
 ]
-"google-cloud-bigquery 1.19.0" = [
-    {file = "google_cloud_bigquery-1.19.0-py2.py3-none-any.whl", hash = "sha256:63bcab8e657c5a9b15215eeb7e933df732ebdbca8ca1fc61aa123ab877c4b854"},
-    {file = "google-cloud-bigquery-1.19.0.tar.gz", hash = "sha256:f017cc0b7f00f0051da5caccf46519d4f9a52907f43462356dfa19713c3bdf4e"},
+"google-cloud-bigquery 1.20.0" = [
+    {file = "google_cloud_bigquery-1.20.0-py2.py3-none-any.whl", hash = "sha256:2ece927eb439ca5659fa82863f6f13ee202f3b20504fec02f087e5ba8eec16fd"},
+    {file = "google-cloud-bigquery-1.20.0.tar.gz", hash = "sha256:dcfc66b2c25a26a6ebaa3e94b597330be2672dc9a94c8658baa9ede0cd969710"},
 ]
 "google-cloud-core 1.7.2" = [
     {file = "google_cloud_core-1.7.2-py2.py3-none-any.whl", hash = "sha256:5b77935f3d9573e27007749a3b522f08d764c5b5930ff1527b2ab2743e9f0c15"},
     {file = "google-cloud-core-1.7.2.tar.gz", hash = "sha256:b1030aadcbb2aeb4ee51475426351af83c1072456b918fb8fdb80666c4bb63b5"},
 ]
-"google-cloud-storage 2.2.0" = [
-    {file = "google_cloud_storage-2.2.0-py2.py3-none-any.whl", hash = "sha256:5f78346bc45b37c27cf9f6f11241f22d8e03c576a24e9fce09f0304e6ef40d64"},
-    {file = "google-cloud-storage-2.2.0.tar.gz", hash = "sha256:d35996801135d51db49bb8f7a7e29cedcc25aa8b435eed0c4c0ef2f9ee56d1d9"},
+"google-cloud-storage 2.2.1" = [
+    {file = "google_cloud_storage-2.2.1-py2.py3-none-any.whl", hash = "sha256:abdf0fadf26516172e804e00b9c24819a3b3f7351cd32f35ca249bbfac965494"},
+    {file = "google-cloud-storage-2.2.1.tar.gz", hash = "sha256:0244f4612710cb5ec445fc6774387564e23f9823363fb408b28724e2102401b7"},
 ]
 "google-crc32c 1.3.0" = [
     {file = "google_crc32c-1.3.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:cb6994fff247987c66a8a4e550ef374671c2b82e3c0d2115e689d21e511a652d"},
@@ -909,6 +985,22 @@ content_hash = "sha256:1c5b38f1274118297ffca75578d65eb4a5f9554bba89603bb2e8b6daa
 "googleapis-common-protos 1.56.1" = [
     {file = "googleapis_common_protos-1.56.1-py2.py3-none-any.whl", hash = "sha256:ddcd955b5bb6589368f659fa475373faa1ed7d09cde5ba25e88513d87007e174"},
     {file = "googleapis-common-protos-1.56.1.tar.gz", hash = "sha256:6b5ee59dc646eb61a8eb65ee1db186d3df6687c8804830024f32573298bca19b"},
+]
+"gql 2.0.0" = [
+    {file = "gql-2.0.0-py2.py3-none-any.whl", hash = "sha256:35032ddd4bfe6b8f3169f806b022168932385d751eacc5c5f7122e0b3f4d6b88"},
+    {file = "gql-2.0.0.tar.gz", hash = "sha256:fe8d3a08047f77362ddfcfddba7cae377da2dd66f5e61c59820419c9283d4fb5"},
+]
+"graphene 2.1.9" = [
+    {file = "graphene-2.1.9-py2.py3-none-any.whl", hash = "sha256:3d446eb1237c551052bc31155cf1a3a607053e4f58c9172b83a1b597beaa0868"},
+    {file = "graphene-2.1.9.tar.gz", hash = "sha256:b9f2850e064eebfee9a3ef4a1f8aa0742848d97652173ab44c82cc8a62b9ed93"},
+]
+"graphql-core 2.3.2" = [
+    {file = "graphql_core-2.3.2-py2.py3-none-any.whl", hash = "sha256:44c9bac4514e5e30c5a595fac8e3c76c1975cae14db215e8174c7fe995825bad"},
+    {file = "graphql-core-2.3.2.tar.gz", hash = "sha256:aac46a9ac524c9855910c14c48fc5d60474def7f99fd10245e76608eba7af746"},
+]
+"graphql-relay 2.0.1" = [
+    {file = "graphql_relay-2.0.1-py3-none-any.whl", hash = "sha256:ac514cb86db9a43014d7e73511d521137ac12cf0101b2eaa5f0a3da2e10d913d"},
+    {file = "graphql-relay-2.0.1.tar.gz", hash = "sha256:870b6b5304123a38a0b215a79eace021acce5a466bf40cd39fa18cb8528afabb"},
 ]
 "greenlet 1.1.2" = [
     {file = "greenlet-1.1.2-cp27-cp27m-macosx_10_14_x86_64.whl", hash = "sha256:58df5c2a0e293bf665a51f8a100d3e9956febfbf1d9aaf8c0677cf70218910c6"},
@@ -1221,6 +1313,9 @@ content_hash = "sha256:1c5b38f1274118297ffca75578d65eb4a5f9554bba89603bb2e8b6daa
 "powerschool 3.6.0" = [
     {file = "powerschool-3.6.0-py3-none-any.whl", hash = "sha256:aa9cb7f52a72937f5023c2653f45e5343160ce6b950aa5b41aaa95cf94f39633"},
     {file = "powerschool-3.6.0.tar.gz", hash = "sha256:cde8e19d0e9386938e2cbf43b7b84f053b50ea4cd99ff281455581438d4a9eff"},
+]
+"promise 2.3" = [
+    {file = "promise-2.3.tar.gz", hash = "sha256:dfd18337c523ba4b6a58801c164c1904a9d4d1b1747c7d5dbf45b693a49d93d0"},
 ]
 "prompt-toolkit 3.0.29" = [
     {file = "prompt_toolkit-3.0.29-py3-none-any.whl", hash = "sha256:62291dad495e665fca0bda814e342c69952086afb0f4094d0893d357e5c78752"},
