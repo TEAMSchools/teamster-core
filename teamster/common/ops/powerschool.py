@@ -97,7 +97,7 @@ def compose_queries(context):
                             selector=selector,
                             start_value=max_value,
                             stop_value=constraint_rules["stop_value"],
-                            step_size=100000,
+                            step_size=30000,
                         )
                         hq_expressions.reverse()
 
