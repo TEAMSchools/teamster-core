@@ -25,20 +25,25 @@ def time_limit(seconds):
 
 
 def get_last_schedule_run(context):
-    runs = context.instance.get_run_records(
-        filters=RunsFilter(
-            statuses=[DagsterRunStatus.SUCCESS],
-            job_name=context.job_name,
-            tags={
-                "dagster/schedule_name": context.get_tag(key="dagster/schedule_name")
-            },
-        ),
-        limit=1,
-    )
+    schedule_name = context.get_tag(key="dagster/schedule_name")
+    if schedule_name:
+        runs = context.instance.get_run_records(
+            filters=RunsFilter(
+                statuses=[DagsterRunStatus.SUCCESS],
+                job_name=context.job_name,
+                tags={"dagster/schedule_name": schedule_name},
+            ),
+            limit=1,
+        )
+    else:
+        # pass if ad hoc query
+        return None
+
+    # TODO: add last run historical_resync
 
     last_run = runs[0] if runs else None
     if last_run:
         return last_run.create_timestamp.astimezone(tz=LOCAL_TIME_ZONE)
     else:
-        # use UNIX Epoch if schedule never ran
+        # return UNIX Epoch if schedule never ran
         return datetime(1970, 1, 1, tzinfo=timezone.utc).astimezone(tz=LOCAL_TIME_ZONE)

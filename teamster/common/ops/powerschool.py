@@ -147,7 +147,13 @@ def time_limit_count(context, table, query, count_type="query", is_resync=False)
         context.log.info("Resync - Skipping transaction_date count.")
         return 1
     elif count_type == "updated":
-        last_run_date = get_last_schedule_run(context).date().isoformat()
+        last_run_datetime = get_last_schedule_run(context)
+        if last_run_datetime:
+            last_run_date = last_run_datetime.date().isoformat()
+        else:
+            # proceed to original query count
+            context.log.info("Ad Hoc - Skipping transaction_date count.")
+            return 1
 
         context.log.info(
             "Searching for matching records updated since {last_run_date}."
