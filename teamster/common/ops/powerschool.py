@@ -211,7 +211,7 @@ def get_count(context, dynamic_query):
         except Exception as e:
             raise RetryRequested() from e
     else:
-        yield Output(value=None, output_name="no_count")
+        return Output(value=None, output_name="no_count")
 
     if query_count > 0:
         n_pages = math.ceil(
@@ -226,7 +226,7 @@ def get_count(context, dynamic_query):
         yield Output(value=query_count, output_name="count")
         yield Output(value=n_pages, output_name="n_pages")
     else:
-        yield Output(value=None, output_name="no_count")
+        return Output(value=None, output_name="no_count")
 
 
 def table_query(context, table, query, projection, page):
@@ -334,4 +334,4 @@ def get_data(context, table, query, projection, count, n_pages):
             gz_file_path, file_key=(file_key + ".gz")
         )
 
-        yield Output(value=gcs_fh.gcs_path, output_name="gcs_path")
+        return Output(value=gcs_fh.gcs_path, output_name="gcs_path")
