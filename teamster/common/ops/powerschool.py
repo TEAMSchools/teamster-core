@@ -138,17 +138,20 @@ def table_count(context, table, query):
 
 
 def time_limit_count(context, table, query, count_type="query", is_resync=False):
-    # TODO: make relative date last run from schedule
-    context.log.debug(gql_last_schedule_run(context))
-    if is_resync:
+    if count_type == "updated" and is_resync:
         # proceed to original query count
         context.log.info("Resync - Skipping transaction_date count.")
         return 1
-    elif count_type == "transaction":
+    elif count_type == "updated":
+        last_run_date = gql_last_schedule_run(context).date().isoformat()
+
+        context.log.info(
+            "Searching for matching records updated since {last_run_date}."
+        )
+
         query = ";".join(
             [
-                "transaction_date=ge="
-                + gql_last_schedule_run(context).date().isoformat(),
+                f"transaction_date=ge={last_run_date}",
                 str(query or ""),
             ]
         )
@@ -187,17 +190,17 @@ def get_count(context, dynamic_query):
 
     try:
         # count query records updated since last run
-        transaction_count = time_limit_count(
+        updated_count = time_limit_count(
             context=context,
             table=table,
             query=query,
-            count_type="transaction",
+            count_type="updated",
             is_resync=is_resync,
         )
     except Exception as e:
         raise RetryRequested() from e
 
-    if transaction_count > 0:
+    if updated_count > 0:
         try:
             # count all records in query
             query_count = time_limit_count(context=context, table=table, query=query)
