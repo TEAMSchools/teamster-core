@@ -78,9 +78,13 @@ def compose_queries(context):
 
                         max_value = q.get("max_value")
                         if not max_value and selector[-2:] == "id":
-                            max_value = int(
-                                table.count() * 1.5
-                            )  # set max historical value for "id" queries to 1.5x count
+                            # 1.5x count estimates deleted record ids
+                            max_value = int(table.count() * 1.5)
+                            place_value = 10 ** (len(str(max_value)) - 1)
+                            max_val_ceil = (
+                                math.ceil(max_value / place_value) * place_value
+                            )
+                            max_value = max_val_ceil
                         elif not max_value:
                             max_value = transform_year_id(year_id, selector)
                         context.log.debug(f"max_value:\t{max_value}")
@@ -206,7 +210,10 @@ def get_count(context, dynamic_query):
             query_count = time_limit_count(context=context, table=table, query=query)
         except Exception as e:
             raise RetryRequested() from e
+    else:
+        yield Output(value=None, output_name="no_count")
 
+    if query_count > 0:
         n_pages = math.ceil(
             query_count / table.client.metadata.schema_table_query_max_page_size
         )
@@ -277,11 +284,10 @@ def get_data(context, table, query, projection, count, n_pages):
         context.log.info(f"Created folder {file_dir}.")
 
     file_ext = "json"
-    file_key_parts = [table.name, str(query or "")]
-
-    file_stem = "_".join(filter(None, file_key_parts))
-
+    file_stem = "_".join(filter(None, [table.name, str(query or "")]))
     file_key = f"{table.name}/{file_stem}.{file_ext}"
+
+    tmp_file_path = data_dir / file_key
 
     data_len = 0
     for p in range(n_pages):
@@ -302,7 +308,6 @@ def get_data(context, table, query, projection, count, n_pages):
 
         data_len += len(data)
 
-        tmp_file_path = data_dir / file_key
         if p == 0:
             with tmp_file_path.open(mode="wt", encoding="utf-8") as f_tmp:
                 json.dump(data, f_tmp)
