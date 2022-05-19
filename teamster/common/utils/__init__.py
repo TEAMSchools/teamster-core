@@ -1,13 +1,14 @@
 import os
 import signal
 from contextlib import contextmanager
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from dagster.core.storage.pipeline_run import RunsFilter, DagsterRunStatus
 
-LOCAL_TIMEZONE = ZoneInfo(os.getenv("LOCAL_TIMEZONE"))
-TODAY = datetime.now(tz=LOCAL_TIMEZONE)
+UTC_TIME_ZONE = ZoneInfo("UTC")
+LOCAL_TIME_ZONE = ZoneInfo(os.getenv("LOCAL_TIME_ZONE"))
+TODAY = datetime.now(tz=LOCAL_TIME_ZONE)
 YESTERDAY = TODAY - timedelta(days=1)
 
 
@@ -24,7 +25,7 @@ def time_limit(seconds):
         signal.alarm(0)
 
 
-def gql_last_schedule_run(context):
+def get_last_schedule_run(context):
     runs = context.instance.get_run_records(
         filters=RunsFilter(
             statuses=[DagsterRunStatus.SUCCESS],
@@ -38,6 +39,7 @@ def gql_last_schedule_run(context):
 
     last_run = runs[0] if runs else None
     if last_run:
-        return last_run.create_timestamp.astimezone(LOCAL_TIMEZONE)
+        return last_run.create_timestamp.astimezone(tz=LOCAL_TIME_ZONE)
     else:
-        return TODAY
+        # use UNIX Epoch if schedule never ran
+        return datetime(1970, 1, 1, tzinfo=timezone.utc).astimezone(tz=LOCAL_TIME_ZONE)
