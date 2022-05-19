@@ -33,7 +33,7 @@ from powerschool.utils import (
 from requests.exceptions import HTTPError
 
 from teamster.common.config.powerschool import COMPOSE_QUERIES_CONFIG
-from teamster.common.utils import TODAY, time_limit, gql_last_schedule_run
+from teamster.common.utils import TODAY, time_limit, get_last_schedule_run
 
 
 @op(
@@ -143,7 +143,7 @@ def time_limit_count(context, table, query, count_type="query", is_resync=False)
         context.log.info("Resync - Skipping transaction_date count.")
         return 1
     elif count_type == "updated":
-        last_run_date = gql_last_schedule_run(context).date().isoformat()
+        last_run_date = get_last_schedule_run(context).date().isoformat()
 
         context.log.info(
             "Searching for matching records updated since {last_run_date}."
