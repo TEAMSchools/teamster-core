@@ -1,24 +1,43 @@
 from dagster import graph
-from teamster.common.ops.powerschool import compose_queries, get_count, get_data
+from teamster.common.ops.powerschool import (
+    compose_tables,
+    filter_queries,
+    compose_queries,
+    compose_resyncs,
+    get_count,
+    get_data,
+)
 
 
 @graph
-def query_data(dynamic_query):
-    # split DynamicOutput and get record count, end if 0
-    table, query, projection, count, n_pages, no_count = get_count(
-        dynamic_query=dynamic_query
-    )
+def execute_query(table_query):
+    # get record count, end if 0
+    count_outs = get_count(table_query=table_query)
 
-    # get data and save to data lake
+    # get data and save file to data lake
     get_data(
-        table=table, query=query, projection=projection, count=count, n_pages=n_pages
+        table=count_outs.table,
+        projection=count_outs.projection,
+        query=count_outs.query,
+        count=count_outs.count,
+        n_pages=count_outs.n_pages,
     )
 
 
 @graph
 def run_queries():
     # parse queries from run config file (config/powerschool/query-*.yaml)
-    dynamic_queries = compose_queries()
+    ct_outs = compose_tables()
 
-    # run sub-graph for each query
-    dynamic_queries.map(query_data)
+    # execute composed queries and filter parsed queries
+    ct_outs.dynamic_tables.map(execute_query)
+    fq_outs = filter_queries(ct_outs.table_queries)
+
+    # execute composed queries, compose parsed queries & resyncs
+    fq_outs.dynamic_tables.map(execute_query)
+    cq_dynamic_tables = compose_queries(fq_outs.table_queries)
+    cr_dynamic_tables = compose_resyncs(fq_outs.table_resyncs)
+
+    # execute parsed queries and resyncs
+    cq_dynamic_tables.map(execute_query)
+    cr_dynamic_tables.map(execute_query)
