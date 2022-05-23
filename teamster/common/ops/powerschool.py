@@ -226,7 +226,7 @@ def time_limit_count(context, table, query, count_type="query", is_resync=False)
             return 1
 
         context.log.info(
-            "Searching for matching records updated since {last_run_date}."
+            f"Searching for matching records updated since {last_run_date}."
         )
 
         query = ";".join(
@@ -258,7 +258,7 @@ def time_limit_count(context, table, query, count_type="query", is_resync=False)
         "n_pages": Out(dagster_type=Int, is_required=False),
         "no_count": Out(dagster_type=Nothing, is_required=False),
     },
-    retry_policy=RetryPolicy(max_retries=99, delay=30, backoff=Backoff.EXPONENTIAL),
+    retry_policy=RetryPolicy(max_retries=9, delay=30, backoff=Backoff.EXPONENTIAL),
     config_schema={"query_timeout": Field(Int, is_required=False, default_value=30)},
     tags={"dagster/priority": 5},
 )
@@ -346,7 +346,7 @@ def time_limit_query(context, table, query, projection, page, retry=False):
     },
     out={"gcs_path": Out(dagster_type=String)},
     required_resource_keys={"gcs_fm"},
-    retry_policy=RetryPolicy(max_retries=2, delay=30, backoff=Backoff.EXPONENTIAL),
+    retry_policy=RetryPolicy(max_retries=9, delay=30, backoff=Backoff.EXPONENTIAL),
     config_schema={"query_timeout": Field(Int, is_required=False, default_value=30)},
     tags={"dagster/priority": 6},
 )
