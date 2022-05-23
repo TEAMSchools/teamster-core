@@ -258,8 +258,8 @@ def time_limit_count(context, table, query, count_type="query", is_resync=False)
         "n_pages": Out(dagster_type=Int, is_required=False),
         "no_count": Out(dagster_type=Nothing, is_required=False),
     },
-    retry_policy=RetryPolicy(max_retries=1, delay=1, backoff=Backoff.EXPONENTIAL),
-    config_schema={"query_timeout": Field(Int, is_required=False, default_value=60)},
+    retry_policy=RetryPolicy(max_retries=99, delay=30, backoff=Backoff.EXPONENTIAL),
+    config_schema={"query_timeout": Field(Int, is_required=False, default_value=30)},
     tags={"dagster/priority": 5},
 )
 def get_count(context, table_query):
@@ -346,8 +346,8 @@ def time_limit_query(context, table, query, projection, page, retry=False):
     },
     out={"gcs_path": Out(dagster_type=String)},
     required_resource_keys={"gcs_fm"},
-    retry_policy=RetryPolicy(max_retries=1, delay=60, backoff=Backoff.EXPONENTIAL),
-    config_schema={"query_timeout": Field(Int, is_required=False, default_value=60)},
+    retry_policy=RetryPolicy(max_retries=2, delay=30, backoff=Backoff.EXPONENTIAL),
+    config_schema={"query_timeout": Field(Int, is_required=False, default_value=30)},
     tags={"dagster/priority": 6},
 )
 def get_data(context, table, projection, query, count, n_pages):
