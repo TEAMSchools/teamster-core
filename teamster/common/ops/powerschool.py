@@ -1,12 +1,15 @@
 import gzip
 import json
 import math
-import pathlib
+
+# import pathlib
 import re
-import shutil
+
+# import shutil
 
 from dagster import (
     Any,
+    Bool,
     DynamicOut,
     DynamicOutput,
     Field,
@@ -240,6 +243,7 @@ def time_limit_count(context, table, query, count_type="query", is_resync=False)
         "query": Out(dagster_type=Optional[String], is_required=False),
         "count": Out(dagster_type=Int, is_required=False),
         "n_pages": Out(dagster_type=Int, is_required=False),
+        "is_resync": Out(dagster_type=Bool, is_required=False),
         "no_count": Out(dagster_type=Nothing, is_required=False),
     },
     retry_policy=RetryPolicy(max_retries=9, delay=30),
@@ -292,6 +296,7 @@ def get_count(context, table_query):
         yield Output(value=projection, output_name="projection")
         yield Output(value=query_count, output_name="count")
         yield Output(value=n_pages, output_name="n_pages")
+        yield Output(value=n_pages, output_name="is_resync")
     else:
         return Output(value=None, output_name="no_count")
 
@@ -336,73 +341,95 @@ def time_limit_query(context, table, query, projection, page, retry=False):
         "query": In(dagster_type=Optional[String]),
         "count": In(dagster_type=Int),
         "n_pages": In(dagster_type=Int),
+        "is_resync": In(dagster_type=Bool),
     },
-    out={"gcs_path": Out(dagster_type=String)},
+    out={"gcs_file_handles": Out(dagster_type=List)},
     required_resource_keys={"gcs_fm"},
     retry_policy=RetryPolicy(max_retries=9, delay=30),
     config_schema={"query_timeout": Field(Int, is_required=False, default_value=30)},
     tags={"dagster/priority": 6},
 )
-def get_data(context, table, projection, query, count, n_pages):
-    data_dir = pathlib.Path("data").absolute()
+def get_data(context, table, projection, query, count, n_pages, is_resync):
+    # data_dir = pathlib.Path("data").absolute()
 
-    file_dir = data_dir / table.name
-    if not file_dir.exists():
-        file_dir.mkdir(parents=True)
-        context.log.info(f"Created folder {file_dir}.")
+    # file_dir = data_dir / table.name
+    # if not file_dir.exists():
+    #     file_dir.mkdir(parents=True)
+    #     context.log.info(f"Created folder {file_dir}.")
 
-    file_ext = "json"
+    file_ext = "json.gz"
     file_stem = "_".join(filter(None, [table.name, str(query or "")]))
-    file_key = f"{table.name}/{file_stem}.{file_ext}"
-
-    tmp_file_path = data_dir / file_key
 
     data_len = 0
+    gcs_file_handles = []
     for p in range(n_pages):
         context.log.debug(f"page:\t{(p + 1)}/{n_pages}")
 
-        try:
-            data = time_limit_query(
-                context=context,
-                table=table,
-                query=query,
-                projection=projection,
-                page=(p + 1),
-            )
-        except Exception as e:
-            raise RetryRequested(
-                max_retries=context.op_def.retry_policy.max_retries,
-                seconds_to_wait=context.op_def.retry_policy.delay,
-            ) from e
-
-        data_len += len(data)
-
-        if p == 0:
-            with tmp_file_path.open(mode="wt", encoding="utf-8") as f_tmp:
-                json.dump(data, f_tmp)
+        file_key = f"{table.name}/{file_stem}_p_{p}.{file_ext}"
+        if is_resync and context.resources.gcs_fm._has_object(key=file_key):
+            continue
         else:
-            with tmp_file_path.open(mode="at", encoding="utf-8") as f_tmp:
-                f_tmp.seek(0, 2)
-                position = f_tmp.tell() - 1
-                f_tmp.seek(position)
-                f_tmp.write(f", {json.dumps(data)[1:-1]}]")
+            try:
+                data = time_limit_query(
+                    context=context,
+                    table=table,
+                    query=query,
+                    projection=projection,
+                    page=(p + 1),
+                )
+            except Exception as e:
+                raise RetryRequested(
+                    max_retries=context.op_def.retry_policy.max_retries,
+                    seconds_to_wait=context.op_def.retry_policy.delay,
+                ) from e
 
-    if data_len < count:
-        updated_count = table.count(q=query)
-        if data_len < updated_count:
-            raise RetryRequested(
-                f"Data received is less than count: {data_len} < {count}",
-                max_retries=context.op_def.retry_policy.max_retries,
-                seconds_to_wait=context.op_def.retry_policy.delay,
+            jsongz_obj = gzip.compress(json.dumps(data).encode("utf-8"))
+
+            gcs_file_handles.append(
+                context.resources.gcs_fm.upload_data(obj=jsongz_obj, file_key=file_key)
             )
-    else:
-        gz_file_path = data_dir / (file_key + ".gz")
-        with tmp_file_path.open(mode="rt", encoding="utf-8") as f_tmp:
-            with gzip.open(gz_file_path, mode="wt", encoding="utf-8") as f_gz:
-                shutil.copyfileobj(f_tmp, f_gz)
+            data_len += len(data)
 
-        gcs_fh = context.resources.gcs_fm.upload(
-            gz_file_path, file_key=(file_key + ".gz")
-        )
+        # if p == 0:
+        #     with tmp_file_path.open(mode="wt", encoding="utf-8") as f_tmp:
+        #         json.dump(data, f_tmp)
+        # else:
+        #     with tmp_file_path.open(mode="at", encoding="utf-8") as f_tmp:
+        #         f_tmp.seek(0, 2)
+        #         position = f_tmp.tell() - 1
+        #         f_tmp.seek(position)
+        #         f_tmp.write(f", {json.dumps(data)[1:-1]}]")
 
-        return Output(value=gcs_fh.gcs_path, output_name="gcs_path")
+        if data_len != count:
+            context.log.warning(
+                (
+                    "Received different number of records than expected: "
+                    f"{data_len} < {count}."
+                    "Recounting."
+                )
+            )
+
+            updated_count = table.count(q=query)
+            if data_len != updated_count:
+                context.log.warning(
+                    (
+                        "Record count still different than expected: "
+                        f"{data_len} < {count}."
+                        "Retrying."
+                    )
+                )
+                raise RetryRequested(
+                    max_retries=context.op_def.retry_policy.max_retries,
+                    seconds_to_wait=context.op_def.retry_policy.delay,
+                )
+        # else:
+        #     gz_file_path = data_dir / (file_key + ".gz")
+        #     with tmp_file_path.open(mode="rt", encoding="utf-8") as f_tmp:
+        #         with gzip.open(gz_file_path, mode="wt", encoding="utf-8") as f_gz:
+        #             shutil.copyfileobj(f_tmp, f_gz)
+
+        #     gcs_fh = context.resources.gcs_fm.upload(
+        #         gz_file_path, file_key=(file_key + ".gz")
+        #     )
+
+        return Output(value=gcs_file_handles, output_name="gcs_file_handles")

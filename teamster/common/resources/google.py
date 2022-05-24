@@ -2,6 +2,7 @@ import gzip
 import json
 import uuid
 
+from dagster import _check as check
 from dagster.config import Field
 from dagster.config.source import StringSource
 from dagster.core.definitions import resource
@@ -118,13 +119,25 @@ class GCSFileManager(GCSFileManager):
     def __init__(self, client, gcs_bucket, gcs_base_key):
         super().__init__(client, gcs_bucket, gcs_base_key)
 
-    def upload(self, file_path, ext=None, file_key=None):
-        # check_file_like_obj(file_obj)
+    def _has_object(self, key):
+        check.str_param(key, "key")
+        check.param_invariant(len(key) > 0, "key")
+        blobs = self.client.list_blobs(self.bucket, prefix=key)
+        return len(list(blobs)) > 0
+
+    def upload_data(self, obj, ext=None, file_key=None):
         gcs_key = self.get_full_key(
             file_key or (str(uuid.uuid4()) + (("." + ext) if ext is not None else ""))
         )
+
         bucket_obj = self._client.bucket(self._gcs_bucket)
-        bucket_obj.blob(gcs_key).upload_from_filename(file_path)
+
+        backoff(
+            bucket_obj.blob(file_key).upload_from_string,
+            args=[obj],
+            retry_on=(TooManyRequests, Forbidden),
+        )
+
         return GCSFileHandle(self._gcs_bucket, gcs_key)
 
 
