@@ -21,6 +21,7 @@ def execute_query(table_query):
         query=count_outs.query,
         count=count_outs.count,
         n_pages=count_outs.n_pages,
+        is_resync=count_outs.is_resync,
     )
 
 
