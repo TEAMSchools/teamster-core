@@ -400,36 +400,35 @@ def get_data(context, table, projection, query, count, n_pages, is_resync):
         #         f_tmp.seek(position)
         #         f_tmp.write(f", {json.dumps(data)[1:-1]}]")
 
-        if data_len != count:
+    if data_len != count:
+        context.log.warning(
+            (
+                "Received different number of records than expected: "
+                f"{data_len} < {count}."
+                "Recounting."
+            )
+        )
+
+        updated_count = table.count(q=query)
+        if data_len != updated_count:
             context.log.warning(
                 (
-                    "Received different number of records than expected: "
+                    "Record count still different than expected: "
                     f"{data_len} < {count}."
-                    "Recounting."
+                    "Retrying."
                 )
             )
+            raise RetryRequested(
+                max_retries=context.op_def.retry_policy.max_retries,
+                seconds_to_wait=context.op_def.retry_policy.delay,
+            )
+    # else:
+    #     gz_file_path = data_dir / (file_key + ".gz")
+    #     with tmp_file_path.open(mode="rt", encoding="utf-8") as f_tmp:
+    #         with gzip.open(gz_file_path, mode="wt", encoding="utf-8") as f_gz:
+    #             shutil.copyfileobj(f_tmp, f_gz)
+    #     gcs_fh = context.resources.gcs_fm.upload(
+    #         gz_file_path, file_key=(file_key + ".gz")
+    #     )
 
-            updated_count = table.count(q=query)
-            if data_len != updated_count:
-                context.log.warning(
-                    (
-                        "Record count still different than expected: "
-                        f"{data_len} < {count}."
-                        "Retrying."
-                    )
-                )
-                raise RetryRequested(
-                    max_retries=context.op_def.retry_policy.max_retries,
-                    seconds_to_wait=context.op_def.retry_policy.delay,
-                )
-        # else:
-        #     gz_file_path = data_dir / (file_key + ".gz")
-        #     with tmp_file_path.open(mode="rt", encoding="utf-8") as f_tmp:
-        #         with gzip.open(gz_file_path, mode="wt", encoding="utf-8") as f_gz:
-        #             shutil.copyfileobj(f_tmp, f_gz)
-
-        #     gcs_fh = context.resources.gcs_fm.upload(
-        #         gz_file_path, file_key=(file_key + ".gz")
-        #     )
-
-        return Output(value=gcs_file_handles, output_name="gcs_file_handles")
+    return Output(value=gcs_file_handles, output_name="gcs_file_handles")
