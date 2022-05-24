@@ -42,7 +42,10 @@ from teamster.common.utils import TODAY, time_limit, get_last_schedule_run
 @op(
     ins={"table_resyncs": In(dagster_type=List[Tuple])},
     out={"dynamic_tables": DynamicOut(dagster_type=Tuple, is_required=False)},
-    config_schema={"step_size": Field(Int, is_required=False, default_value=30000)},
+    config_schema={
+        "step_size": Field(Int, is_required=False, default_value=30000),
+        "force": Field(Bool, is_required=False, default_value=False),
+    },
     tags={"dagster/priority": 1},
 )
 def compose_resyncs(context, table_resyncs):
