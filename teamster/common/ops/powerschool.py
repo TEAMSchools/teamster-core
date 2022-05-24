@@ -42,7 +42,7 @@ from teamster.common.utils import TODAY, time_limit, get_last_schedule_run
 @op(
     ins={"table_resyncs": In(dagster_type=List[Tuple])},
     out={"dynamic_tables": DynamicOut(dagster_type=Tuple, is_required=False)},
-    config_schema={"step_size": Field(Int, is_required=False, default_value=200000)},
+    config_schema={"step_size": Field(Int, is_required=False, default_value=30000)},
     tags={"dagster/priority": 1},
 )
 def compose_resyncs(context, table_resyncs):
@@ -153,8 +153,11 @@ def filter_queries(context, table_queries):
                         (year_id, table, mapping_key, projection, selector, value)
                     )
 
-    yield Output(value=table_queries_filtered, output_name="table_queries")
-    yield Output(value=table_resyncs, output_name="table_resyncs")
+    if table_queries_filtered:
+        yield Output(value=table_queries_filtered, output_name="table_queries")
+
+    if table_resyncs:
+        yield Output(value=table_resyncs, output_name="table_resyncs")
 
 
 @op(
@@ -187,7 +190,8 @@ def compose_tables(context):
                 mapping_key=mapping_key,
             )
 
-    yield Output(value=table_queries, output_name="table_queries")
+    if table_queries:
+        yield Output(value=table_queries, output_name="table_queries")
 
 
 def table_count(context, table, query):
@@ -296,7 +300,7 @@ def get_count(context, table_query):
         yield Output(value=projection, output_name="projection")
         yield Output(value=query_count, output_name="count")
         yield Output(value=n_pages, output_name="n_pages")
-        yield Output(value=n_pages, output_name="is_resync")
+        yield Output(value=is_resync, output_name="is_resync")
     else:
         return Output(value=None, output_name="no_count")
 
