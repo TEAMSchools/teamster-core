@@ -72,11 +72,6 @@ def compose_resyncs(context, table_resyncs):
 
         for i, hq in enumerate(historical_queries):
             mapping_key = f"{re.sub(r'[^A-Za-z0-9]', '_', table.name)}_h_{i}"
-
-            context.log.info(
-                f"table:\t\t{table.name}\nprojection:\t{projection}\nq:\t\t{hq}"
-            )
-
             yield DynamicOutput(
                 value=(table, projection, hq, True),
                 output_name="dynamic_tables",
@@ -103,13 +98,6 @@ def compose_queries(context, table_queries):
 
         composed_query = get_query_expression(selector=selector, **constraint_values)
 
-        context.log.info(
-            (
-                f"table:\t\t{table.name}\n"
-                f"projection:\t{projection}\n"
-                f"q:\t\t{composed_query}"
-            )
-        )
         yield DynamicOutput(
             value=(table, projection, composed_query, False),
             output_name="dynamic_tables",
@@ -140,9 +128,6 @@ def filter_queries(context, table_queries):
             q = query.get("q")
 
             if isinstance(q, str):
-                context.log.info(
-                    f"table:\t\t{table.name}\nprojection:\t{projection}\nq:\t\t{q}"
-                )
                 yield DynamicOutput(
                     value=(table, projection, q, False),
                     output_name="dynamic_tables",
@@ -193,7 +178,6 @@ def compose_tables(context):
         if queries:
             table_queries.append((year_id, table, projection, queries))
         else:
-            context.log.info(f"table:\t\t{table.name}\nprojection:\t{projection}\n")
             yield DynamicOutput(
                 value=(table, projection, None, False),
                 output_name="dynamic_tables",
@@ -264,6 +248,9 @@ def time_limit_count(context, table, query, count_type="query", is_resync=False)
 )
 def get_count(context, table_query):
     table, projection, query, is_resync = table_query
+    context.log.info(
+        f"table:\t\t{table.name}\nprojection:\t{projection}\nq:\t\t{query}"
+    )
 
     try:
         # count query records updated since last run
