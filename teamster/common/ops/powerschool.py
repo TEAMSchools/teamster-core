@@ -1,11 +1,7 @@
 import gzip
 import json
 import math
-
-# import pathlib
 import re
-
-# import shutil
 
 from dagster import (
     Any,
@@ -55,15 +51,21 @@ def compose_resyncs(context, table_resyncs):
         context.log.info(f"Generating historical queries for {table.name}.")
 
         if not max_value and selector[-2:] == "id":
-            # 1.5x count estimates deleted record ids
-            max_value = int(table.count() * 1.5)
+            max_value = int(
+                table.query(
+                    projection=selector,
+                    sort=selector,
+                    sortdescending="true",
+                    pagesize=1,
+                    page=1,
+                )[0][selector]
+            )
             place_value = 10 ** (len(str(max_value)) - 1)
             max_val_ceil = math.ceil(max_value / place_value) * place_value
             max_value = max_val_ceil
         elif not max_value:
             max_value = transform_year_id(year_id, selector)
         context.log.debug(f"max_value:\t{max_value}")
-
         constraint_rules = get_constraint_rules(
             selector, year_id=year_id, is_historical=True
         )
