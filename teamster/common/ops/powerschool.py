@@ -66,7 +66,7 @@ def compose_resyncs(context, table_resyncs):
             selector=selector,
             start_value=max_value,
             stop_value=constraint_rules["stop_value"],
-            step_size=30000,
+            step_size=context.op_config["step_size"],
         )
         historical_queries.reverse()
 
@@ -180,7 +180,7 @@ def filter_queries(context, table_queries):
 )
 def compose_tables(context):
     tables = context.op_config["tables"]
-    year_id = context.op_config.get("year_id")
+    year_id = context.op_config["year_id"]
 
     table_queries = []
     for i, tbl in enumerate(tables):
