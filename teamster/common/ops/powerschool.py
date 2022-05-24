@@ -366,6 +366,7 @@ def get_data(context, table, projection, query, count, n_pages, is_resync):
         context.log.debug(f"page:\t{(p + 1)}/{n_pages}")
 
         file_key = f"{table.name}/{file_stem}_p_{p}.{file_ext}"
+        # TODO: change to context.retry_number > 0?
         if is_resync and context.resources.gcs_fm._has_object(key=file_key):
             continue
         else:

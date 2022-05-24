@@ -122,7 +122,7 @@ class GCSFileManager(GCSFileManager):
     def _has_object(self, key):
         check.str_param(key, "key")
         check.param_invariant(len(key) > 0, "key")
-        blobs = self.client.list_blobs(self.bucket, prefix=key)
+        blobs = self._client.list_blobs(self.bucket, prefix=key)
         return len(list(blobs)) > 0
 
     def upload_data(self, obj, ext=None, file_key=None):
