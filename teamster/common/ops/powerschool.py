@@ -7,7 +7,6 @@ import shutil
 
 from dagster import (
     Any,
-    Backoff,
     DynamicOut,
     DynamicOutput,
     Field,
@@ -40,6 +39,7 @@ from teamster.common.utils import TODAY, time_limit, get_last_schedule_run
 @op(
     ins={"table_resyncs": In(dagster_type=List[Tuple])},
     out={"dynamic_tables": DynamicOut(dagster_type=Tuple, is_required=False)},
+    config_schema={"step_size": Field(Int, is_required=False, default_value=30)},
     tags={"dagster/priority": 1},
 )
 def compose_resyncs(context, table_resyncs):
@@ -258,7 +258,7 @@ def time_limit_count(context, table, query, count_type="query", is_resync=False)
         "n_pages": Out(dagster_type=Int, is_required=False),
         "no_count": Out(dagster_type=Nothing, is_required=False),
     },
-    retry_policy=RetryPolicy(max_retries=9, delay=30, backoff=Backoff.EXPONENTIAL),
+    retry_policy=RetryPolicy(max_retries=9, delay=30),
     config_schema={"query_timeout": Field(Int, is_required=False, default_value=30)},
     tags={"dagster/priority": 5},
 )
@@ -275,14 +275,20 @@ def get_count(context, table_query):
             is_resync=is_resync,
         )
     except Exception as e:
-        raise RetryRequested() from e
+        raise RetryRequested(
+            max_retries=context.op_def.retry_policy.max_retries,
+            seconds_to_wait=context.op_def.retry_policy.delay,
+        ) from e
 
     if updated_count > 0:
         try:
             # count all records in query
             query_count = time_limit_count(context=context, table=table, query=query)
         except Exception as e:
-            raise RetryRequested() from e
+            raise RetryRequested(
+                max_retries=context.op_def.retry_policy.max_retries,
+                seconds_to_wait=context.op_def.retry_policy.delay,
+            ) from e
     else:
         context.log.info("No record updates since last run. Skipping.")
         return Output(value=None, output_name="no_count")
@@ -346,7 +352,7 @@ def time_limit_query(context, table, query, projection, page, retry=False):
     },
     out={"gcs_path": Out(dagster_type=String)},
     required_resource_keys={"gcs_fm"},
-    retry_policy=RetryPolicy(max_retries=9, delay=30, backoff=Backoff.EXPONENTIAL),
+    retry_policy=RetryPolicy(max_retries=9, delay=30),
     config_schema={"query_timeout": Field(Int, is_required=False, default_value=30)},
     tags={"dagster/priority": 6},
 )
@@ -377,7 +383,10 @@ def get_data(context, table, projection, query, count, n_pages):
                 page=(p + 1),
             )
         except Exception as e:
-            raise RetryRequested() from e
+            raise RetryRequested(
+                max_retries=context.op_def.retry_policy.max_retries,
+                seconds_to_wait=context.op_def.retry_policy.delay,
+            ) from e
 
         data_len += len(data)
 
@@ -395,7 +404,9 @@ def get_data(context, table, projection, query, count, n_pages):
         updated_count = table.count(q=query)
         if data_len < updated_count:
             raise RetryRequested(
-                f"Data received is less than count: {data_len} < {count}"
+                f"Data received is less than count: {data_len} < {count}",
+                max_retries=context.op_def.retry_policy.max_retries,
+                seconds_to_wait=context.op_def.retry_policy.delay,
             )
     else:
         gz_file_path = data_dir / (file_key + ".gz")
