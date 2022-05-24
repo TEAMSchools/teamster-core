@@ -354,13 +354,6 @@ def time_limit_query(context, table, query, projection, page, retry=False):
     tags={"dagster/priority": 6},
 )
 def get_data(context, table, projection, query, count, n_pages, is_resync):
-    # data_dir = pathlib.Path("data").absolute()
-
-    # file_dir = data_dir / table.name
-    # if not file_dir.exists():
-    #     file_dir.mkdir(parents=True)
-    #     context.log.info(f"Created folder {file_dir}.")
-
     file_ext = "json.gz"
     file_stem = "_".join(filter(None, [table.name, str(query or "")]))
 
@@ -394,16 +387,6 @@ def get_data(context, table, projection, query, count, n_pages, is_resync):
             )
             data_len += len(data)
 
-        # if p == 0:
-        #     with tmp_file_path.open(mode="wt", encoding="utf-8") as f_tmp:
-        #         json.dump(data, f_tmp)
-        # else:
-        #     with tmp_file_path.open(mode="at", encoding="utf-8") as f_tmp:
-        #         f_tmp.seek(0, 2)
-        #         position = f_tmp.tell() - 1
-        #         f_tmp.seek(position)
-        #         f_tmp.write(f", {json.dumps(data)[1:-1]}]")
-
     if data_len != count:
         context.log.warning(
             (
@@ -426,13 +409,5 @@ def get_data(context, table, projection, query, count, n_pages, is_resync):
                 max_retries=context.op_def.retry_policy.max_retries,
                 seconds_to_wait=context.op_def.retry_policy.delay,
             )
-    # else:
-    #     gz_file_path = data_dir / (file_key + ".gz")
-    #     with tmp_file_path.open(mode="rt", encoding="utf-8") as f_tmp:
-    #         with gzip.open(gz_file_path, mode="wt", encoding="utf-8") as f_gz:
-    #             shutil.copyfileobj(f_tmp, f_gz)
-    #     gcs_fh = context.resources.gcs_fm.upload(
-    #         gz_file_path, file_key=(file_key + ".gz")
-    #     )
 
     return Output(value=gcs_file_handles, output_name="gcs_file_handles")

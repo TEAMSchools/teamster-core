@@ -133,7 +133,7 @@ class GCSFileManager(GCSFileManager):
         bucket_obj = self._client.bucket(self._gcs_bucket)
 
         backoff(
-            bucket_obj.blob(file_key).upload_from_string,
+            bucket_obj.blob(gcs_key).upload_from_string,
             args=[obj],
             retry_on=(TooManyRequests, Forbidden),
         )
