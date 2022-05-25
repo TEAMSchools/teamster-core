@@ -381,11 +381,9 @@ def get_data(context, table, projection, query, count, n_pages):
                     seconds_to_wait=context.op_def.retry_policy.delay,
                 ) from e
 
-            jsongz_obj = gzip.compress(json.dumps(data).encode("utf-8"))
-
             gcs_file_handles.append(
-                context.resources.gcs_fm.upload_data(
-                    context=context, obj=jsongz_obj, file_key=file_key
+                context.resources.gcs_fm.upload_from_string(
+                    context=context, obj=gzip.compress(json.dumps(data).encode("utf-8")), file_key=file_key
                 )
             )
 
