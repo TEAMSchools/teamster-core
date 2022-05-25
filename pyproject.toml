@@ -11,6 +11,8 @@ dependencies = [
     "dagster-gcp>=0.14.14",
     "powerschool>=3.6",
     "dagster-k8s>=0.14.16",
+    "sqlalchemy>=1.4",
+    "pyodbc>=4.0.32",
 ]
 requires-python = ">=3.9"
 license = {text = "GPL-3.0-or-later"}

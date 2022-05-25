@@ -235,7 +235,7 @@ def time_limit_count(context, table, query, count_type="query", is_resync=False)
         except HTTPError as e:
             if str(e) == '{"message":"Invalid field transaction_date"}':
                 # proceed to original query count
-                context.log.info("Skipping transaction_date count.")
+                context.log.warning("Skipping transaction_date count.")
                 return 1
             else:
                 raise e
@@ -350,6 +350,10 @@ def time_limit_query(context, table, query, projection, page, retry=False):
     tags={"dagster/priority": 6},
 )
 def get_data(context, table, projection, query, n_pages):
+    context.log.debug(
+        f"table:\t\t{table.name}\nprojection:\t{projection}\nq:\t\t{query}"
+    )
+
     file_ext = "json.gz"
     file_stem = "_".join(filter(None, [table.name, str(query or "")]))
 

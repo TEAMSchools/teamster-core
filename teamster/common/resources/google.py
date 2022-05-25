@@ -2,15 +2,13 @@ import gzip
 import json
 import uuid
 
+from dagster import DagsterEventType, Field, StringSource
 from dagster import _check as check
-from dagster.config import Field
-from dagster.config.source import StringSource
-from dagster.core.definitions import resource
-from dagster.core.events import DagsterEventType
-from dagster.core.storage.io_manager import io_manager
+from dagster import io_manager, resource
 from dagster.utils.backoff import backoff
 from dagster.utils.merger import merge_dicts
-from dagster_gcp.gcs.file_manager import GCSFileHandle, GCSFileManager
+from dagster_gcp import GCSFileHandle
+from dagster_gcp.gcs.file_manager import GCSFileManager
 from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager
 from dagster_gcp.gcs.resources import GCS_CLIENT_CONFIG, _gcs_client_from_config
 from google.api_core.exceptions import Forbidden, TooManyRequests
