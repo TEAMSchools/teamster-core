@@ -356,7 +356,7 @@ def get_data(context, table, projection, query, count, n_pages):
     file_ext = "json.gz"
     file_stem = "_".join(filter(None, [table.name, str(query or "")]))
 
-    data_len = 0
+    # data_len = 0
     gcs_file_handles = []
     for p in range(n_pages):
         file_key = f"{table.name}/{file_stem}_p_{p}.{file_ext}"
@@ -387,8 +387,9 @@ def get_data(context, table, projection, query, count, n_pages):
             gcs_file_handles.append(
                 context.resources.gcs_fm.upload_data(obj=jsongz_obj, file_key=file_key)
             )
-            data_len += len(data)
+            # data_len += len(data)
 
+    """
     if data_len != count:
         context.log.warning(
             (
@@ -411,5 +412,6 @@ def get_data(context, table, projection, query, count, n_pages):
                 max_retries=context.op_def.retry_policy.max_retries,
                 seconds_to_wait=context.op_def.retry_policy.delay,
             )
+    """
 
     return Output(value=gcs_file_handles, output_name="gcs_file_handles")
