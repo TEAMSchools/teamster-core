@@ -356,7 +356,6 @@ def get_data(context, table, projection, query, count, n_pages):
     file_ext = "json.gz"
     file_stem = "_".join(filter(None, [table.name, str(query or "")]))
 
-    # data_len = 0
     gcs_file_handles = []
     for p in range(n_pages):
         file_key = f"{table.name}/{file_stem}_p_{p}.{file_ext}"
@@ -364,7 +363,7 @@ def get_data(context, table, projection, query, count, n_pages):
         if context.retry_number > 0 and context.resources.gcs_fm._has_object(
             key=file_key
         ):
-            continue
+            context.log.debug("File already exists from previous try. Skipping.")
         else:
             context.log.debug(f"page:\t{(p + 1)}/{n_pages}")
 
@@ -385,11 +384,14 @@ def get_data(context, table, projection, query, count, n_pages):
             jsongz_obj = gzip.compress(json.dumps(data).encode("utf-8"))
 
             gcs_file_handles.append(
-                context.resources.gcs_fm.upload_data(obj=jsongz_obj, file_key=file_key)
+                context.resources.gcs_fm.upload_data(
+                    context=context, obj=jsongz_obj, file_key=file_key
+                )
             )
-            # data_len += len(data)
 
-    """
+    """ TODO: refactor into new Op?
+    data_len = 0
+    data_len += len(data)
     if data_len != count:
         context.log.warning(
             (
