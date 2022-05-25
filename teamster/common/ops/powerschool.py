@@ -247,7 +247,6 @@ def time_limit_count(context, table, query, count_type="query", is_resync=False)
         "table": Out(dagster_type=Any, is_required=False),
         "projection": Out(dagster_type=Optional[String], is_required=False),
         "query": Out(dagster_type=Optional[String], is_required=False),
-        "count": Out(dagster_type=Int, is_required=False),
         "n_pages": Out(dagster_type=Int, is_required=False),
         "no_count": Out(dagster_type=Nothing, is_required=False),
     },
@@ -299,7 +298,6 @@ def get_count(context, table_query):
         yield Output(value=table, output_name="table")
         yield Output(value=query, output_name="query")
         yield Output(value=projection, output_name="projection")
-        yield Output(value=query_count, output_name="count")
         yield Output(value=n_pages, output_name="n_pages")
     else:
         return Output(value=None, output_name="no_count")
@@ -343,7 +341,6 @@ def time_limit_query(context, table, query, projection, page, retry=False):
         "table": In(dagster_type=Any),
         "projection": In(dagster_type=Optional[String]),
         "query": In(dagster_type=Optional[String]),
-        "count": In(dagster_type=Int),
         "n_pages": In(dagster_type=Int),
     },
     out={"gcs_file_handles": Out(dagster_type=List)},
@@ -352,7 +349,7 @@ def time_limit_query(context, table, query, projection, page, retry=False):
     config_schema={"query_timeout": Field(Int, is_required=False, default_value=30)},
     tags={"dagster/priority": 6},
 )
-def get_data(context, table, projection, query, count, n_pages):
+def get_data(context, table, projection, query, n_pages):
     file_ext = "json.gz"
     file_stem = "_".join(filter(None, [table.name, str(query or "")]))
 
@@ -383,35 +380,10 @@ def get_data(context, table, projection, query, count, n_pages):
 
             gcs_file_handles.append(
                 context.resources.gcs_fm.upload_from_string(
-                    context=context, obj=gzip.compress(json.dumps(data).encode("utf-8")), file_key=file_key
+                    context=context,
+                    obj=gzip.compress(json.dumps(data).encode("utf-8")),
+                    file_key=file_key,
                 )
             )
-
-    """ TODO: refactor into new Op?
-    data_len = 0
-    data_len += len(data)
-    if data_len != count:
-        context.log.warning(
-            (
-                "Received different number of records than expected: "
-                f"{data_len} < {count}."
-                "Recounting."
-            )
-        )
-
-        updated_count = table.count(q=query)
-        if data_len != updated_count:
-            context.log.warning(
-                (
-                    "Record count still different than expected: "
-                    f"{data_len} < {count}."
-                    "Retrying."
-                )
-            )
-            raise RetryRequested(
-                max_retries=context.op_def.retry_policy.max_retries,
-                seconds_to_wait=context.op_def.retry_policy.delay,
-            )
-    """
 
     return Output(value=gcs_file_handles, output_name="gcs_file_handles")

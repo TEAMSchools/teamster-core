@@ -19,7 +19,6 @@ def execute_query(table_query):
         table=count_outs.table,
         projection=count_outs.projection,
         query=count_outs.query,
-        count=count_outs.count,
         n_pages=count_outs.n_pages,
     )
 
