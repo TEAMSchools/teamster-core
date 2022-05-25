@@ -118,27 +118,46 @@ def gcs_jsongz_io_manager(init_context):
 class GCSFileManager(GCSFileManager):
     def __init__(self, client, gcs_bucket, gcs_base_key):
         super().__init__(client, gcs_bucket, gcs_base_key)
+        self.bucket_obj = self._client.bucket(self._gcs_bucket)
+
+    def _rm_object(self, key):
+        check.str_param(key, "key")
+        check.param_invariant(len(key) > 0, "key")
+
+        if self.bucket_obj.blob(key).exists():
+            self.bucket_obj.blob(key).delete()
 
     def _has_object(self, key):
         check.str_param(key, "key")
         check.param_invariant(len(key) > 0, "key")
+
+        key = self.get_full_key(key)
         blobs = self._client.list_blobs(self._gcs_bucket, prefix=key)
+
         return len(list(blobs)) > 0
 
-    def upload_data(self, obj, ext=None, file_key=None):
-        gcs_key = self.get_full_key(
+    def _uri_for_key(self, key):
+        check.str_param(key, "key")
+        return f"gs://{self._gcs_bucket}/{key}"
+
+    def upload_from_string(self, context, obj, ext=None, file_key=None):
+        key = self.get_full_key(
             file_key or (str(uuid.uuid4()) + (("." + ext) if ext is not None else ""))
         )
 
-        bucket_obj = self._client.bucket(self._gcs_bucket)
+        context.log.debug(f"Writing GCS object at: {self._uri_for_key(key=key)}")
+
+        if self._has_object(key):
+            context.log.warning(f"Removing existing GCS key: {key}")
+            self._rm_object(key)
 
         backoff(
-            bucket_obj.blob(gcs_key).upload_from_string,
+            self.bucket_obj.blob(key).upload_from_string,
             args=[obj],
             retry_on=(TooManyRequests, Forbidden),
         )
 
-        return GCSFileHandle(self._gcs_bucket, gcs_key)
+        return GCSFileHandle(self._gcs_bucket, key)
 
 
 @resource(

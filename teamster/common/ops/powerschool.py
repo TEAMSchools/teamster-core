@@ -79,11 +79,10 @@ def compose_resyncs(context, table_resyncs):
         historical_queries.reverse()
 
         for i, hq in enumerate(historical_queries):
-            mapping_key = f"{re.sub(r'[^A-Za-z0-9]', '_', table.name)}_h_{i}"
             yield DynamicOutput(
                 value=(table, projection, hq, True),
                 output_name="dynamic_tables",
-                mapping_key=mapping_key,
+                mapping_key=f"{re.sub(r'[^A-Za-z0-9]', '_', table.name)}_h_{i}",
             )
 
 
@@ -184,15 +183,13 @@ def compose_tables(context):
         projection = tbl.get("projection")
         queries = [fq for fq in tbl.get("queries", {}) if fq.get("q")]
 
-        mapping_key = f"{re.sub(r'[^A-Za-z0-9]', '_', table.name)}_t_{i}"
-
         if queries:
             table_queries.append((year_id, table, projection, queries))
         else:
             yield DynamicOutput(
                 value=(table, projection, None, False),
                 output_name="dynamic_tables",
-                mapping_key=mapping_key,
+                mapping_key=f"{re.sub(r'[^A-Za-z0-9]', '_', table.name)}_t_{i}",
             )
 
     if table_queries:
@@ -252,7 +249,6 @@ def time_limit_count(context, table, query, count_type="query", is_resync=False)
         "query": Out(dagster_type=Optional[String], is_required=False),
         "count": Out(dagster_type=Int, is_required=False),
         "n_pages": Out(dagster_type=Int, is_required=False),
-        "is_resync": Out(dagster_type=Bool, is_required=False),
         "no_count": Out(dagster_type=Nothing, is_required=False),
     },
     retry_policy=RetryPolicy(max_retries=9, delay=30),
@@ -305,7 +301,6 @@ def get_count(context, table_query):
         yield Output(value=projection, output_name="projection")
         yield Output(value=query_count, output_name="count")
         yield Output(value=n_pages, output_name="n_pages")
-        yield Output(value=is_resync, output_name="is_resync")
     else:
         return Output(value=None, output_name="no_count")
 
@@ -350,7 +345,6 @@ def time_limit_query(context, table, query, projection, page, retry=False):
         "query": In(dagster_type=Optional[String]),
         "count": In(dagster_type=Int),
         "n_pages": In(dagster_type=Int),
-        "is_resync": In(dagster_type=Bool),
     },
     out={"gcs_file_handles": Out(dagster_type=List)},
     required_resource_keys={"gcs_fm"},
@@ -358,20 +352,22 @@ def time_limit_query(context, table, query, projection, page, retry=False):
     config_schema={"query_timeout": Field(Int, is_required=False, default_value=30)},
     tags={"dagster/priority": 6},
 )
-def get_data(context, table, projection, query, count, n_pages, is_resync):
+def get_data(context, table, projection, query, count, n_pages):
     file_ext = "json.gz"
     file_stem = "_".join(filter(None, [table.name, str(query or "")]))
 
     data_len = 0
     gcs_file_handles = []
     for p in range(n_pages):
-        context.log.debug(f"page:\t{(p + 1)}/{n_pages}")
-
         file_key = f"{table.name}/{file_stem}_p_{p}.{file_ext}"
-        # TODO: change to context.retry_number > 0?
-        if is_resync and context.resources.gcs_fm._has_object(key=file_key):
+
+        if context.retry_number > 0 and context.resources.gcs_fm._has_object(
+            key=file_key
+        ):
             continue
         else:
+            context.log.debug(f"page:\t{(p + 1)}/{n_pages}")
+
             try:
                 data = time_limit_query(
                     context=context,
