@@ -3,25 +3,23 @@ import json
 import math
 import re
 
+from dagster import op
+from dagster import Any, Bool, Int, List, Nothing, Optional, String, Tuple
 from dagster import (
-    Any,
-    Bool,
+    Backoff,
     DynamicOut,
     DynamicOutput,
     Field,
     In,
-    Int,
-    Nothing,
-    Optional,
+    Jitter,
     Out,
     Output,
     RetryPolicy,
     RetryRequested,
-    String,
-    Tuple,
-    op,
 )
-from dagster.core.types.dagster_type import List
+from requests.exceptions import HTTPError
+from teamster.common.config.powerschool import COMPOSE_QUERIES_CONFIG
+from teamster.common.utils import TODAY, get_last_schedule_run, time_limit
 from powerschool.utils import (
     generate_historical_queries,
     get_constraint_rules,
@@ -29,10 +27,6 @@ from powerschool.utils import (
     get_query_expression,
     transform_year_id,
 )
-from requests.exceptions import HTTPError
-
-from teamster.common.config.powerschool import COMPOSE_QUERIES_CONFIG
-from teamster.common.utils import TODAY, time_limit, get_last_schedule_run
 
 
 @op(
@@ -250,7 +244,9 @@ def time_limit_count(context, table, query, count_type="query", is_resync=False)
         "n_pages": Out(dagster_type=Int, is_required=False),
         "no_count": Out(dagster_type=Nothing, is_required=False),
     },
-    retry_policy=RetryPolicy(max_retries=9, delay=30),
+    retry_policy=RetryPolicy(
+        max_retries=5, delay=30, backoff=Backoff.EXPONENTIAL, jitter=Jitter.PLUS_MINUS
+    ),
     config_schema={"query_timeout": Field(Int, is_required=False, default_value=30)},
     tags={"dagster/priority": 5},
 )
@@ -345,7 +341,9 @@ def time_limit_query(context, table, query, projection, page, retry=False):
     },
     out={"gcs_file_handles": Out(dagster_type=List)},
     required_resource_keys={"gcs_fm"},
-    retry_policy=RetryPolicy(max_retries=9, delay=30),
+    retry_policy=RetryPolicy(
+        max_retries=5, delay=30, backoff=Backoff.EXPONENTIAL, jitter=Jitter.PLUS_MINUS
+    ),
     config_schema={"query_timeout": Field(Int, is_required=False, default_value=30)},
     tags={"dagster/priority": 6},
 )
