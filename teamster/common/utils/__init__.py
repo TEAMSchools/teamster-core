@@ -1,7 +1,7 @@
 import os
 import signal
 from contextlib import contextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta  # , timezone
 from zoneinfo import ZoneInfo
 
 from dagster.core.storage.pipeline_run import RunsFilter, DagsterRunStatus
@@ -35,15 +35,30 @@ def get_last_schedule_run(context):
             ),
             limit=1,
         )
+
+        if "resync" not in context.job_name:
+            ix = context.job_name.index("_")
+            repo_name = context.job_name[:ix]
+            resyncs = context.instance.get_run_records(
+                filters=RunsFilter(
+                    statuses=[DagsterRunStatus.SUCCESS],
+                    job_name=f"{repo_name}_resync",
+                ),
+                limit=1,
+            )
+
+        last_run = runs[0] if runs else None
+        last_resync = resyncs[0] if resyncs else None
+        if last_run:
+            return last_run.create_timestamp.astimezone(tz=LOCAL_TIME_ZONE)
+        elif last_resync:
+            return last_resync.create_timestamp.astimezone(tz=LOCAL_TIME_ZONE)
+        else:
+            return None
+            # # return UNIX Epoch if schedule or resync never ran
+            # return datetime(1970, 1, 1, tzinfo=timezone.utc).astimezone(
+            #     tz=LOCAL_TIME_ZONE
+            # )
     else:
         # pass if ad hoc query
         return None
-
-    # TODO: add last run historical_resync
-
-    last_run = runs[0] if runs else None
-    if last_run:
-        return last_run.create_timestamp.astimezone(tz=LOCAL_TIME_ZONE)
-    else:
-        # return UNIX Epoch if schedule never ran
-        return datetime(1970, 1, 1, tzinfo=timezone.utc).astimezone(tz=LOCAL_TIME_ZONE)
