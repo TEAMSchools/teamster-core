@@ -7,7 +7,7 @@ resources:
         env: POWERSCHOOL_CLIENT_ID
       client_secret:
         env: POWERSCHOOL_CLIENT_SECRET
-  gcs_fm:
+  file_manager:
     config:
       gcs_prefix: powerschool
 execution:

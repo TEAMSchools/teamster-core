@@ -13,6 +13,8 @@ dependencies = [
     "dagster-k8s>=0.14.16",
     "sqlalchemy>=1.4",
     "pyodbc>=4.0.32",
+    "dagster-ssh>=0.14.17",
+    "gspread>=5.4.0",
 ]
 requires-python = ">=3.9"
 license = {text = "GPL-3.0-or-later"}

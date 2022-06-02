@@ -1,5 +1,5 @@
 resources:
-  gcs_fm:
+  file_manager:
     config:
       gcs_bucket:
         env: IMAGE_NAME

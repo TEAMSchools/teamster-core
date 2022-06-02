@@ -340,7 +340,7 @@ def time_limit_query(context, table, query, projection, page, retry=False):
         "n_pages": In(dagster_type=Int),
     },
     out={"gcs_file_handles": Out(dagster_type=List)},
-    required_resource_keys={"gcs_fm"},
+    required_resource_keys={"file_manager"},
     retry_policy=RetryPolicy(
         max_retries=5, delay=30, backoff=Backoff.EXPONENTIAL, jitter=Jitter.PLUS_MINUS
     ),
@@ -352,14 +352,13 @@ def get_data(context, table, projection, query, n_pages):
         f"table:\t\t{table.name}\nprojection:\t{projection}\nq:\t\t{query}"
     )
 
-    file_ext = "json.gz"
     file_stem = "_".join(filter(None, [table.name, str(query or "")]))
 
     gcs_file_handles = []
     for p in range(n_pages):
-        file_key = f"{table.name}/{file_stem}_p_{p}.{file_ext}"
+        file_key = f"{table.name}/{file_stem}_p_{p}.json.gz"
 
-        if context.retry_number > 0 and context.resources.gcs_fm._has_object(
+        if context.retry_number > 0 and context.resources.file_manager._has_object(
             key=file_key
         ):
             context.log.debug("File already exists from previous try. Skipping.")
@@ -381,8 +380,7 @@ def get_data(context, table, projection, query, n_pages):
                 ) from e
 
             gcs_file_handles.append(
-                context.resources.gcs_fm.upload_from_string(
-                    context=context,
+                context.resources.file_manager.upload_from_string(
                     obj=gzip.compress(json.dumps(data).encode("utf-8")),
                     file_key=file_key,
                 )

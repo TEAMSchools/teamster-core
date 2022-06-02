@@ -1,4 +1,5 @@
 from dagster import graph
+
 from teamster.common.ops.powerschool import (
     compose_tables,
     filter_queries,

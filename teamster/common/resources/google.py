@@ -2,7 +2,8 @@ import gzip
 import json
 import uuid
 
-from dagster import DagsterEventType, Field, StringSource
+import gspread
+from dagster import DagsterEventType, Field, String, StringSource
 from dagster import _check as check
 from dagster import io_manager, resource
 from dagster.utils.backoff import backoff
@@ -11,10 +12,11 @@ from dagster_gcp import GCSFileHandle
 from dagster_gcp.gcs.file_manager import GCSFileManager
 from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager
 from dagster_gcp.gcs.resources import GCS_CLIENT_CONFIG, _gcs_client_from_config
+import google.auth
 from google.api_core.exceptions import Forbidden, TooManyRequests
 
 
-class JsonGzObjectGCSIOManager(PickledObjectGCSIOManager):
+class GCSIOManager(PickledObjectGCSIOManager):
     def __init__(self, bucket, client=None, prefix="dagster"):
         super().__init__(bucket, client, prefix)
 
@@ -22,15 +24,22 @@ class JsonGzObjectGCSIOManager(PickledObjectGCSIOManager):
         all_output_logs = context.step_context.instance.all_logs(
             context.run_id, of_type=DagsterEventType.STEP_OUTPUT
         )
-        step_output_log = [
-            log for log in all_output_logs if log.step_key == context.step_key
-        ][0]
-        metadata = step_output_log.dagster_event.event_specific_data.metadata_entries
 
-        file_key_entry = next(
-            iter([e for e in metadata if e.label == "file_key"]), None
+        step_output_log = (
+            [log for log in all_output_logs if log.step_key == context.step_key][0]
+            if all_output_logs
+            else None
         )
+        if step_output_log:
+            metadata = (
+                step_output_log.dagster_event.event_specific_data.metadata_entries
+            )
+        else:
+            return None
 
+        file_key_entry = (
+            [e for e in metadata if e.label == "file_key"][0] if metadata else None
+        )
         if file_key_entry:
             return file_key_entry.value.text
         else:
@@ -67,11 +76,9 @@ class JsonGzObjectGCSIOManager(PickledObjectGCSIOManager):
             context.log.warning(f"Removing existing GCS key: {key}")
             self._rm_object(key)
 
-        jsongz_obj = gzip.compress(json.dumps(obj).encode("utf-8"))
-
         backoff(
             self.bucket_obj.blob(key).upload_from_string,
-            args=[jsongz_obj],
+            args=[obj],
             retry_on=(TooManyRequests, Forbidden),
         )
 
@@ -83,40 +90,19 @@ class JsonGzObjectGCSIOManager(PickledObjectGCSIOManager):
     },
     required_resource_keys={"gcs"},
 )
-def gcs_jsongz_io_manager(init_context):
-    """
-    Persistent IO manager using GCS for storage.
-    Serializes objects via JSON. Suitable for objects storage for distributed
-    executors, so long as each execution node has network connectivity and credentials
-    for GCS and the backing bucket. Attach this resource definition to your job to make
-    it available to your ops.
-    .. code-block:: python
-        @job(resource_defs={
-            'io_manager': gcs_pickle_io_manager, 'gcs': gcs_resource, ...
-        })
-        def my_job():
-            my_op()
-    You may configure this storage as follows:
-    .. code-block:: YAML
-        resources:
-            io_manager:
-                config:
-                    gcs_bucket: my-cool-bucket
-                    gcs_prefix: good/prefix-for-files-
-    """
-    client = init_context.resources.gcs
-    json_io_manager = JsonGzObjectGCSIOManager(
-        init_context.resource_config["gcs_bucket"],
-        client,
-        init_context.resource_config["gcs_prefix"],
+def gcs_io_manager(context):
+    return GCSIOManager(
+        bucket=context.resource_config["gcs_bucket"],
+        client=context.resources.gcs,
+        prefix=context.resource_config["gcs_prefix"],
     )
-    return json_io_manager
 
 
 class GCSFileManager(GCSFileManager):
-    def __init__(self, client, gcs_bucket, gcs_base_key):
+    def __init__(self, client, gcs_bucket, gcs_base_key, logger):
         super().__init__(client, gcs_bucket, gcs_base_key)
         self.bucket_obj = self._client.bucket(self._gcs_bucket)
+        self.log = logger
 
     def _rm_object(self, key):
         check.str_param(key, "key")
@@ -138,15 +124,15 @@ class GCSFileManager(GCSFileManager):
         check.str_param(key, "key")
         return f"gs://{self._gcs_bucket}/{key}"
 
-    def upload_from_string(self, context, obj, ext=None, file_key=None):
+    def upload_from_string(self, obj, ext=None, file_key=None):
         key = self.get_full_key(
             file_key or (str(uuid.uuid4()) + (("." + ext) if ext is not None else ""))
         )
 
-        context.log.debug(f"Writing GCS object at: {self._uri_for_key(key=key)}")
+        self.log.debug(f"Writing GCS object at: {self._uri_for_key(key=key)}")
 
         if self._has_object(key):
-            context.log.warning(f"Removing existing GCS key: {key}")
+            self.log.warning(f"Removing existing GCS key: {key}")
             self._rm_object(key)
 
         backoff(
@@ -157,9 +143,13 @@ class GCSFileManager(GCSFileManager):
 
         return GCSFileHandle(self._gcs_bucket, key)
 
+    def download_as_bytes(self, file_handle):
+        bucket_obj = self._client.bucket(file_handle.gcs_bucket)
+        return bucket_obj.blob(file_handle.gcs_key).download_as_bytes()
+
 
 @resource(
-    merge_dicts(
+    config_schema=merge_dicts(
         GCS_CLIENT_CONFIG,
         {
             "gcs_bucket": Field(StringSource),
@@ -178,4 +168,96 @@ def gcs_file_manager(context):
         client=gcs_client,
         gcs_bucket=context.resource_config["gcs_bucket"],
         gcs_base_key=context.resource_config["gcs_prefix"],
+        logger=context.log,
+    )
+
+
+class GoogleSheets(object):
+    def __init__(self, folder_id, logger):
+        self.folder_id = folder_id
+        self.log = logger
+        self.scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive",
+        ]
+
+        credentials, project_id = google.auth.default(scopes=self.scopes)
+        self.client = gspread.authorize(credentials)
+
+    def create_spreadsheet(self, title):
+        return self.client.create(title=title, folder_id=self.folder_id)
+
+    def open_spreadsheet(self, title, create=False):
+        try:
+            return self.client.open(title=title, folder_id=self.folder_id)
+        except gspread.exceptions.SpreadsheetNotFound as xc:
+            if create:
+                spreadsheet = self.create_spreadsheet(title=title)
+                self.log.info(
+                    f"Created Spreadsheet '{spreadsheet.title}' at {spreadsheet.url}."
+                )
+                return spreadsheet
+            else:
+                raise xc
+
+    def get_named_range(self, spreadsheet, range_name):
+        named_ranges = spreadsheet.list_named_ranges()
+
+        named_range_match = [nr for nr in named_ranges if nr["name"] == range_name]
+
+        return named_range_match[0] if named_range_match else None
+
+    def update_named_range(self, data, spreadsheet_name, range_name):
+        spreadsheet = self.open_spreadsheet(title=spreadsheet_name, create=True)
+        named_range = self.get_named_range(
+            spreadsheet=spreadsheet, range_name=range_name
+        )
+
+        if named_range:
+            worksheet = spreadsheet.get_worksheet_by_id(
+                id=named_range["range"].get("sheetId", 0)
+            )
+
+            named_range_id = named_range.get("namedRangeId")
+            end_row_ix = named_range["range"].get("endRowIndex", 0)
+            end_col_ix = named_range["range"].get("endColumnIndex", 0)
+            range_area = (end_row_ix + 1) * (end_col_ix + 1)
+        else:
+            worksheet = spreadsheet.sheet1
+            named_range_id = None
+            range_area = 0
+
+        nrows, ncols = data["shape"]
+        nrows = nrows + 1  # header row
+        data_area = nrows * ncols
+
+        # resize worksheet
+        worksheet_area = worksheet.row_count * worksheet.col_count
+        if worksheet_area != data_area:
+            worksheet.resize(rows=nrows, cols=ncols)
+
+        # resize named range
+        if range_area != data_area:
+            start_cell = gspread.utils.rowcol_to_a1(1, 1)
+            end_cell = gspread.utils.rowcol_to_a1(nrows, ncols)
+
+            self.log.info(
+                f"Resetting named range '{range_name}' to {start_cell}:{end_cell}."
+            )
+            worksheet.delete_named_range(named_range_id=named_range_id)
+            worksheet.define_named_range(
+                name=f"{start_cell}:{end_cell}", range_name=range_name
+            )
+
+        self.log.info(f"Clearing '{range_name}' values.")
+        worksheet.batch_clear([range_name])
+
+        self.log.info(f"Updating '{range_name}': {data_area} cells.")
+        worksheet.update(range_name, [data["columns"]] + data["data"])
+
+
+@resource(config_schema={"folder_id": Field(String)})
+def google_sheets(context):
+    return GoogleSheets(
+        folder_id=context.resource_config["folder_id"], logger=context.log
     )
