@@ -24,9 +24,9 @@ class SqlAlchemyEngine(object):
         self.connection_url = URL.create(drivername=f"{dialect}+{driver}", **kwargs)
         self.engine = create_engine(url=self.connection_url)
 
-        self.log.info(self.connection_url)
-
     def execute_text_query(self, query, output="dict"):
+        self.log.info(f"Executing query: {query}")
+
         with self.engine.connect() as conn:
             result = conn.execute(statement=text(query))
 
@@ -35,6 +35,7 @@ class SqlAlchemyEngine(object):
             else:
                 output_obj = [row for row in result]
 
+        self.log.info(f"Received {len(output_obj)} rows.")
         if output == "json":
             return json.dumps(obj=output_obj, cls=SqlAlchemyJsonEncoder)
         else:

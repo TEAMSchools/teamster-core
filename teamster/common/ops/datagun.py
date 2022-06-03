@@ -61,10 +61,7 @@ def compose_queries(context):
 def extract(context, dynamic_query):
     query, file_config, dest_config = dynamic_query
 
-    context.log.info(query)
     data = context.resources.db.execute_text_query(query)
-
-    context.log.info(f"Received {len(data)} rows.")
     if data:
         yield Output(value=data, output_name="data")
         yield Output(value=file_config, output_name="file_config")
