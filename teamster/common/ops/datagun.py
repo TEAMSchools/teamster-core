@@ -51,9 +51,9 @@ def compose_queries(context):
 @op(
     ins={"dynamic_query": In(dagster_type=Tuple)},
     out={
-        "data": Out(dagster_type=List[Dict]),
-        "file_config": Out(dagster_type=Dict),
-        "dest_config": Out(dagster_type=Dict),
+        "data": Out(dagster_type=List[Dict], is_required=False),
+        "file_config": Out(dagster_type=Dict, is_required=False),
+        "dest_config": Out(dagster_type=Dict, is_required=False),
     },
     required_resource_keys={"db"},
     tags={"dagster/priority": 2},

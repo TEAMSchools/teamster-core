@@ -199,6 +199,8 @@ class GoogleSheets(object):
                 return spreadsheet
             else:
                 raise xc
+        except Exception as xc:
+            raise xc
 
     def get_named_range(self, spreadsheet, range_name):
         named_ranges = spreadsheet.list_named_ranges()
@@ -208,10 +210,14 @@ class GoogleSheets(object):
         return named_range_match[0] if named_range_match else None
 
     def update_named_range(self, data, spreadsheet_name, range_name):
+        self.log.debug(spreadsheet_name)
+        self.log.debug(range_name)
         spreadsheet = self.open_spreadsheet(title=spreadsheet_name, create=True)
+        self.log.debug(spreadsheet)
         named_range = self.get_named_range(
             spreadsheet=spreadsheet, range_name=range_name
         )
+        self.log.debug(named_range)
 
         if named_range:
             worksheet = spreadsheet.get_worksheet_by_id(
