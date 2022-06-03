@@ -1,10 +1,8 @@
-import os
 import gzip
 import json
 import pathlib
 
 import pandas as pd
-import requests
 from dagster import op
 from dagster import Tuple, Dict, List
 from dagster import DynamicOut, DynamicOutput, In, Out, Output, RetryPolicy
@@ -61,14 +59,6 @@ def compose_queries(context):
     tags={"dagster/priority": 2},
 )
 def extract(context, dynamic_query):
-    ip = requests.get("https://www.ifconfig.me/all")
-    context.log.info(ip.text)
-    context.log.info(os.getenv("MSSQL_HOST"))
-    context.log.info(os.getenv("MSSQL_PORT"))
-    context.log.info(os.getenv("MSSQL_DATABASE"))
-    context.log.info(os.getenv("MSSQL_USERNAME"))
-    context.log.info(os.getenv("MSSQL_PASSWORD"))
-
     query, file_config, dest_config = dynamic_query
 
     context.log.info(query)

@@ -19,9 +19,12 @@ class SqlAlchemyJsonEncoder(json.JSONEncoder):
 
 
 class SqlAlchemyEngine(object):
-    def __init__(self, dialect, driver, **kwargs):
+    def __init__(self, dialect, driver, logger, **kwargs):
+        self.log = logger
         self.connection_url = URL.create(drivername=f"{dialect}+{driver}", **kwargs)
         self.engine = create_engine(url=self.connection_url)
+
+        self.log.info(self.connection_url)
 
     def execute_text_query(self, query, output="dict"):
         with self.engine.connect() as conn:
@@ -39,8 +42,10 @@ class SqlAlchemyEngine(object):
 
 
 class MssqlEngine(SqlAlchemyEngine):
-    def __init__(self, dialect, driver, mssql_driver, **kwargs):
-        super().__init__(dialect, driver, query={"driver": mssql_driver}, **kwargs)
+    def __init__(self, dialect, driver, logger, mssql_driver, **kwargs):
+        super().__init__(
+            dialect, driver, logger, query={"driver": mssql_driver}, **kwargs
+        )
 
 
 SQLALCHEMY_ENGINE_CONFIG = {
@@ -60,5 +65,5 @@ SQLALCHEMY_ENGINE_CONFIG = {
         {"mssql_driver": Field(StringSource, is_required=False)},
     )
 )
-def mssql(init_context):
-    return MssqlEngine(**init_context.resource_config)
+def mssql(context):
+    return MssqlEngine(logger=context.log, **context.resource_config)
