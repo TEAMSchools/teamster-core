@@ -87,6 +87,7 @@ def transform(context, data, file_config, dest_config):
     dest_type = dest_config["type"]
     dest_path = dest_config.get("path")
 
+    context.log.info(f"Transforming data to {file_suffix}")
     if file_suffix == "json.gz":
         data_str = gzip.compress(json.dumps(data).encode("utf-8"))
     elif file_suffix == "json":
@@ -107,6 +108,8 @@ def transform(context, data, file_config, dest_config):
             obj=data_str,
             file_key=f"{dest_name}/{file_stem}.{file_suffix}",
         )
+        context.log.info(f"Saved to {file_handle.path_desc}.")
+
         yield Output(
             value=(dest_type, (file_handle, dest_path)), output_name="transformed"
         )

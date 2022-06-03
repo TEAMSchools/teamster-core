@@ -25,7 +25,7 @@ class SqlAlchemyEngine(object):
         self.engine = create_engine(url=self.connection_url)
 
     def execute_text_query(self, query, output="dict"):
-        self.log.info(f"Executing query: {query}")
+        self.log.info(f"Executing query:\n{query}")
 
         with self.engine.connect() as conn:
             result = conn.execute(statement=text(query))
