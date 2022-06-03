@@ -1,3 +1,4 @@
+import os
 import gzip
 import json
 import pathlib
@@ -62,6 +63,12 @@ def compose_queries(context):
 def extract(context, dynamic_query):
     ip = requests.get("https://www.ifconfig.me/all")
     context.log.info(ip.text)
+
+    os.getenv("MSSQL_HOST")
+    os.getenv("MSSQL_PORT")
+    os.getenv("MSSQL_DATABASE")
+    os.getenv("MSSQL_USERNAME")
+    os.getenv("MSSQL_PASSWORD")
 
     query, file_config, dest_config = dynamic_query
 
