@@ -198,18 +198,14 @@ def table_count(context, table, query):
         raise e
 
 
-def time_limit_count(context, table, query, count_type="query", is_resync=False):
-    if count_type == "updated" and is_resync:
-        # proceed to original query count
-        context.log.info("Resync - Skipping transaction_date count.")
-        return 1
-    elif count_type == "updated":
+def time_limit_count(context, table, query, count_type):
+    if count_type == "incremental":
         last_run_datetime = get_last_schedule_run(context)
         if last_run_datetime:
             last_run_date = last_run_datetime.date().isoformat()
         else:
             # proceed to original query count
-            context.log.info("Ad Hoc - Skipping transaction_date count.")
+            context.log.info("No Schedule - Skipping `transaction_date` count.")
             return 1
 
         context.log.info(
@@ -247,7 +243,10 @@ def time_limit_count(context, table, query, count_type="query", is_resync=False)
     retry_policy=RetryPolicy(
         max_retries=5, delay=30, backoff=Backoff.EXPONENTIAL, jitter=Jitter.PLUS_MINUS
     ),
-    config_schema={"query_timeout": Field(Int, is_required=False, default_value=30)},
+    config_schema={
+        "query_timeout": Field(Int, is_required=False, default_value=30),
+        "skip_incremental": Field(Bool, is_required=False),
+    },
     tags={"dagster/priority": 5},
 )
 def get_count(context, table_query):
@@ -256,25 +255,27 @@ def get_count(context, table_query):
         f"table:\t\t{table.name}\nprojection:\t{projection}\nq:\t\t{query}"
     )
 
-    try:
-        # count query records updated since last run
-        updated_count = time_limit_count(
-            context=context,
-            table=table,
-            query=query,
-            count_type="updated",
-            is_resync=is_resync,
-        )
-    except Exception as e:
-        raise RetryRequested(
-            max_retries=context.op_def.retry_policy.max_retries,
-            seconds_to_wait=context.op_def.retry_policy.delay,
-        ) from e
+    if is_resync or context.op_config.get("skip_incremental"):
+        context.log.info("Skipping `transaction_date` count.")
+        updated_count = 1
+    else:
+        try:
+            # count query records updated since last run
+            updated_count = time_limit_count(
+                context=context, table=table, query=query, count_type="incremental"
+            )
+        except Exception as e:
+            raise RetryRequested(
+                max_retries=context.op_def.retry_policy.max_retries,
+                seconds_to_wait=context.op_def.retry_policy.delay,
+            ) from e
 
     if updated_count > 0:
         try:
             # count all records in query
-            query_count = time_limit_count(context=context, table=table, query=query)
+            query_count = time_limit_count(
+                context=context, table=table, query=query, count_type="query"
+            )
         except Exception as e:
             raise RetryRequested(
                 max_retries=context.op_def.retry_policy.max_retries,
