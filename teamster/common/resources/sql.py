@@ -35,7 +35,7 @@ class SqlAlchemyEngine(object):
             else:
                 output_obj = [row for row in result]
 
-        self.log.info(f"Received {len(output_obj)} rows.")
+        self.log.info(f"Retrieved {len(output_obj)} rows.")
         if output == "json":
             return json.dumps(obj=output_obj, cls=SqlAlchemyJsonEncoder)
         else:

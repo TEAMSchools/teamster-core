@@ -124,10 +124,10 @@ def transform(context, data, file_config, dest_config):
 def load_destination(context, transformed):
     dest_type, transformed_ins = transformed
 
-    if dest_type == "gsheets":
+    if dest_type == "gsheet":
         data, file_stem = transformed_ins
         context.resources.destination.update_named_range(
-            context=context, data=data, spreadsheet_name=file_stem, range_name=file_stem
+            data=data, spreadsheet_name=file_stem, range_name=file_stem
         )
     elif dest_type == "sftp":
         file_handle, dest_path = transformed_ins

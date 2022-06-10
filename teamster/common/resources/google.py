@@ -173,8 +173,9 @@ def gcs_file_manager(context):
 
 
 class GoogleSheets(object):
-    def __init__(self, folder_id):
+    def __init__(self, folder_id, logger):
         self.folder_id = folder_id
+        self.log = logger
         self.scopes = [
             "https://www.googleapis.com/auth/spreadsheets",
             "https://www.googleapis.com/auth/drive",
@@ -186,13 +187,13 @@ class GoogleSheets(object):
     def create_spreadsheet(self, title):
         return self.client.create(title=title, folder_id=self.folder_id)
 
-    def open_spreadsheet(self, context, title, create=False):
+    def open_spreadsheet(self, title, create=False):
         try:
             return self.client.open(title=title, folder_id=self.folder_id)
         except gspread.exceptions.SpreadsheetNotFound as xc:
             if create:
                 spreadsheet = self.create_spreadsheet(title=title)
-                context.log.info(
+                self.log.info(
                     f"Created Spreadsheet '{spreadsheet.title}' at {spreadsheet.url}."
                 )
                 return spreadsheet
@@ -208,17 +209,12 @@ class GoogleSheets(object):
 
         return named_range_match[0] if named_range_match else None
 
-    def update_named_range(self, context, data, spreadsheet_name, range_name):
-        context.log.debug(spreadsheet_name)
-        context.log.debug(range_name)
-
+    def update_named_range(self, data, spreadsheet_name, range_name):
         spreadsheet = self.open_spreadsheet(title=spreadsheet_name, create=True)
-        context.log.debug(spreadsheet)
 
         named_range = self.get_named_range(
             spreadsheet=spreadsheet, range_name=range_name
         )
-        context.log.debug(named_range)
 
         if named_range:
             worksheet = spreadsheet.get_worksheet_by_id(
@@ -248,7 +244,7 @@ class GoogleSheets(object):
             start_cell = gspread.utils.rowcol_to_a1(1, 1)
             end_cell = gspread.utils.rowcol_to_a1(nrows, ncols)
 
-            context.log.info(
+            self.log.info(
                 f"Resetting named range '{range_name}' to {start_cell}:{end_cell}."
             )
             worksheet.delete_named_range(named_range_id=named_range_id)
@@ -256,13 +252,15 @@ class GoogleSheets(object):
                 name=f"{start_cell}:{end_cell}", range_name=range_name
             )
 
-        context.log.info(f"Clearing '{range_name}' values.")
+        self.log.info(f"Clearing '{range_name}' values.")
         worksheet.batch_clear([range_name])
 
-        context.log.info(f"Updating '{range_name}': {data_area} cells.")
+        self.log.info(f"Updating '{range_name}': {data_area} cells.")
         worksheet.update(range_name, [data["columns"]] + data["data"])
 
 
 @resource(config_schema={"folder_id": Field(String)})
 def google_sheets(context):
-    return GoogleSheets(folder_id=context.resource_config["folder_id"])
+    return GoogleSheets(
+        folder_id=context.resource_config["folder_id"], logger=context.log
+    )
