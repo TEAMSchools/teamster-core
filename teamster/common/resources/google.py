@@ -237,6 +237,7 @@ class GoogleSheets(object):
         # resize worksheet
         worksheet_area = worksheet.row_count * worksheet.col_count
         if worksheet_area != data_area:
+            self.log.info(f"Resizing worksheet area to {nrows}x{ncols}.")
             worksheet.resize(rows=nrows, cols=ncols)
 
         # resize named range
@@ -245,7 +246,7 @@ class GoogleSheets(object):
             end_cell = gspread.utils.rowcol_to_a1(nrows, ncols)
 
             self.log.info(
-                f"Resetting named range '{range_name}' to {start_cell}:{end_cell}."
+                f"Resizing named range '{range_name}' to {start_cell}:{end_cell}."
             )
             worksheet.delete_named_range(named_range_id=named_range_id)
             worksheet.define_named_range(
