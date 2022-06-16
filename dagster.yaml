@@ -3,7 +3,7 @@ instance_class:
   class: DagsterCloudAgentInstance
 
 dagster_cloud_api:
-  agent_token: 
+  agent_token:
     env: DAGSTER_CLOUD_AGENT_TOKEN
   deployment: stg
 

@@ -3,23 +3,27 @@ import json
 import math
 import re
 
-from dagster import op
-from dagster import Any, Bool, Int, List, Nothing, Optional, String, Tuple
 from dagster import (
+    Any,
     Backoff,
+    Bool,
     DynamicOut,
     DynamicOutput,
     Field,
     In,
+    Int,
     Jitter,
+    List,
+    Nothing,
+    Optional,
     Out,
     Output,
     RetryPolicy,
     RetryRequested,
+    String,
+    Tuple,
+    op,
 )
-from requests.exceptions import HTTPError
-from teamster.common.config.powerschool import COMPOSE_QUERIES_CONFIG
-from teamster.common.utils import TODAY, get_last_schedule_run, time_limit
 from powerschool.utils import (
     generate_historical_queries,
     get_constraint_rules,
@@ -27,6 +31,10 @@ from powerschool.utils import (
     get_query_expression,
     transform_year_id,
 )
+from requests.exceptions import HTTPError
+
+from teamster.common.config.powerschool import COMPOSE_QUERIES_CONFIG
+from teamster.common.utils import TODAY, get_last_schedule_run, time_limit
 
 
 @op(

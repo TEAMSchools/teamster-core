@@ -1,4 +1,4 @@
-from dagster import resource, StringSource
+from dagster import StringSource, resource
 from powerschool import PowerSchool
 
 

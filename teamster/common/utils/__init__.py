@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta  # , timezone
 from zoneinfo import ZoneInfo
 
-from dagster.core.storage.pipeline_run import RunsFilter, DagsterRunStatus
+from dagster.core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 
 LOCAL_TIME_ZONE = ZoneInfo(os.getenv("LOCAL_TIME_ZONE"))
 TODAY = datetime.now(tz=LOCAL_TIME_ZONE)

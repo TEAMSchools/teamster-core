@@ -1,7 +1,6 @@
 import os
 
-from dagster import Field, Array, Shape, ScalarUnion
-from dagster import Any, IntSource, String
+from dagster import Any, Array, Field, IntSource, ScalarUnion, Shape, String
 
 COMPOSE_QUERIES_CONFIG = Shape(
     {

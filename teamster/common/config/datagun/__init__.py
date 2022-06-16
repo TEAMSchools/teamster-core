@@ -1,5 +1,4 @@
-from dagster import Field, Array, Shape, Selector, Permissive
-from dagster import String
+from dagster import Array, Field, Permissive, Selector, Shape, String
 
 COMPOSE_QUERIES_CONFIG = Shape(
     {

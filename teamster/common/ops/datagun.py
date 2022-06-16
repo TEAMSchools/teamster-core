@@ -3,9 +3,18 @@ import json
 import pathlib
 
 import pandas as pd
-from dagster import op
-from dagster import Tuple, Dict, List
-from dagster import DynamicOut, DynamicOutput, In, Out, Output, RetryPolicy
+from dagster import (
+    Dict,
+    DynamicOut,
+    DynamicOutput,
+    In,
+    List,
+    Out,
+    Output,
+    RetryPolicy,
+    Tuple,
+    op,
+)
 
 from teamster.common.config.datagun import COMPOSE_QUERIES_CONFIG
 from teamster.common.utils import TODAY

@@ -2,7 +2,7 @@ import datetime
 import decimal
 import json
 
-from dagster import resource, StringSource, IntSource, Field
+from dagster import Field, IntSource, StringSource, resource
 from dagster.utils.merger import merge_dicts
 from sqlalchemy import text
 from sqlalchemy.engine import URL, create_engine

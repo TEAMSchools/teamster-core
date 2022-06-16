@@ -1,10 +1,10 @@
 from dagster import graph
 
 from teamster.common.ops.powerschool import (
-    compose_tables,
-    filter_queries,
     compose_queries,
     compose_resyncs,
+    compose_tables,
+    filter_queries,
     get_count,
     get_data,
 )

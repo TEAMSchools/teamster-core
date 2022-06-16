@@ -64,16 +64,3 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-      # trigger child teamster repos
-      # https://github.com/actions/github-script
-      - uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.PAT_TOKEN }}
-          script: |
-            await github.rest.actions.createWorkflowDispatch({
-              owner: 'TEAMSchools',
-              repo: 'teamster-kippnewark',
-              workflow_id: 'dagster-cloud-cicd.yaml',
-              ref: 'main'
-            })
