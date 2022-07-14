@@ -17,7 +17,7 @@ from dagster import (
 )
 
 from teamster.common.config.datagun import COMPOSE_QUERIES_CONFIG
-from teamster.common.utils import TODAY
+from teamster.common.utils import CustomJSONEncoder, TODAY
 
 
 @op(
@@ -98,9 +98,11 @@ def transform(context, data, file_config, dest_config):
 
     context.log.info(f"Transforming data to {file_suffix}")
     if file_suffix == "json.gz":
-        data_str = gzip.compress(json.dumps(data).encode("utf-8"))
+        data_str = gzip.compress(
+            json.dumps(obj=data, cls=CustomJSONEncoder).encode("utf-8")
+        )
     elif file_suffix == "json":
-        data_str = json.dumps(data).encode("utf-8")
+        data_str = json.dumps(obj=data, cls=CustomJSONEncoder).encode("utf-8")
     elif file_suffix == "gsheet":
         df = pd.DataFrame(data=data)
         df_json = df.to_json(orient="split", date_format="iso", index=False)

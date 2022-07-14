@@ -1,5 +1,3 @@
-import datetime
-import decimal
 import json
 
 from dagster import Field, IntSource, StringSource, resource
@@ -7,15 +5,7 @@ from dagster.utils.merger import merge_dicts
 from sqlalchemy import text
 from sqlalchemy.engine import URL, create_engine
 
-
-class SqlAlchemyJsonEncoder(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(o, (datetime.timedelta, decimal.Decimal)):
-            return str(o)
-        elif isinstance(o, (datetime.datetime, datetime.date)):
-            return o.isoformat()
-        else:
-            return super().default(o)
+from teamster.common.utils import CustomJSONEncoder
 
 
 class SqlAlchemyEngine(object):
@@ -37,7 +27,7 @@ class SqlAlchemyEngine(object):
 
         self.log.info(f"Retrieved {len(output_obj)} rows.")
         if output == "json":
-            return json.dumps(obj=output_obj, cls=SqlAlchemyJsonEncoder)
+            return json.dumps(obj=output_obj, cls=CustomJSONEncoder)
         else:
             return output_obj
 
