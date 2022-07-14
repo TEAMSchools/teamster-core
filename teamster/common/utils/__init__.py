@@ -1,16 +1,16 @@
+import datetime
 import decimal
 import json
 import os
 import signal
 from contextlib import contextmanager
-from datetime import datetime, timedelta  # , timezone
 from zoneinfo import ZoneInfo
 
 from dagster.core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 
 LOCAL_TIME_ZONE = ZoneInfo(os.getenv("LOCAL_TIME_ZONE"))
-TODAY = datetime.now(tz=LOCAL_TIME_ZONE)
-YESTERDAY = TODAY - timedelta(days=1)
+TODAY = datetime.datetime.now(tz=LOCAL_TIME_ZONE)
+YESTERDAY = TODAY - datetime.timedelta(days=1)
 
 
 class CustomJSONEncoder(json.JSONEncoder):
