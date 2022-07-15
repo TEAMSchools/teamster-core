@@ -3,35 +3,30 @@ name = ""
 version = ""
 description = ""
 authors = [
-  { name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com" },
+    {name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com"},
 ]
 dependencies = [
-  "dagster>=0.14.14",
-  "dagster-cloud>=0.14.14",
-  "dagster-gcp>=0.14.14",
-  "powerschool>=3.6",
-  "dagster-k8s>=0.14.16",
-  "sqlalchemy>=1.4",
-  "pyodbc>=4.0.32",
-  "dagster-ssh>=0.14.17",
-  "gspread>=5.4.0",
+    "dagster>=0.15.5",
+    "dagster-cloud>=0.15.5",
+    "dagster-gcp>=0.15.5",
+    "dagster-ssh>=0.15.5",
+    "powerschool>=3.6",
+    "sqlalchemy>=1.4",
+    "pyodbc>=4.0.32",
+    "gspread>=5.4.0",
 ]
 requires-python = ">=3.9"
-license = { text = "GPL-3.0-or-later" }
+license = {text = "MIT"}
 
-[project.urls]
-homepage = ""
-
-
-[project.optional-dependencies]
 [tool]
 [tool.pdm]
 [tool.pdm.dev-dependencies]
 dev = [
-    "dagster-docker>=0.14.14"]
+    "dagster-docker>=0.15.5"
+]
 
 [build-system]
-requires = ["pdm-pep517>=0.12.0"]
+requires = ["pdm-pep517>=1.0.0"]
 build-backend = "pdm.pep517.api"
 
 [tool.pdm.scripts]

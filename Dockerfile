@@ -23,7 +23,7 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# install pdm
+# # install pdm
 RUN curl -sSL https://raw.githubusercontent.com/pdm-project/pdm/main/install-pdm.py | python3 -
 ENV PATH="/root/.local/bin:$PATH"
 
@@ -32,10 +32,11 @@ ENV HOME="/root"
 WORKDIR $HOME/app
 COPY . $HOME/app
 
-# install project dependencies
-RUN pdm install --prod
+# # install project dependencies
+RUN pdm config python.use_venv False
+RUN pdm install --prod --no-lock --no-editable
 
 # add pdm directories to PATH envars
 ARG IMAGE_PYTHON_VERSION
-ENV PYTHONPATH="/root/.local/share/pdm/venv/lib/python${IMAGE_PYTHON_VERSION}/site-packages/pdm/pep582:/root/app/__pypackages__/${IMAGE_PYTHON_VERSION}/lib"
+ENV PYTHONPATH="/root/app/__pypackages__/${IMAGE_PYTHON_VERSION}/lib"
 ENV PATH="/root/app/__pypackages__/${IMAGE_PYTHON_VERSION}/bin:$PATH"
