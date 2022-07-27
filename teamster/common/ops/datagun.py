@@ -151,6 +151,7 @@ def load_destination(context, transformed):
 
             if dest_path:
                 dest_filepath = pathlib.Path(sftp.getcwd()) / dest_path / file_name
+                sftp.chdir(str(dest_filepath.parent))
             else:
                 dest_filepath = pathlib.Path(sftp.getcwd()) / file_name
 
@@ -173,7 +174,6 @@ def load_destination(context, transformed):
                 )
             )
 
-            sftp.chdir(str(dest_filepath.parent))
             with sftp.file(file_name, "w") as f:
                 f.write(
                     context.resources.file_manager.download_as_bytes(
