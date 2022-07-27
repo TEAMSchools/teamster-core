@@ -1,6 +1,7 @@
 import gzip
 import json
 import pathlib
+import re
 
 import pandas as pd
 from dagster import (
@@ -31,6 +32,7 @@ def compose_queries(context):
 
     for i, q in enumerate(queries):
         file_config = q["file"]
+        file_stem = re.sub(r"[^A-Za-z0-9_]+", "", file_config["stem"])
         [(query_type, value)] = q["sql"].items()
 
         if query_type == "text":
@@ -51,9 +53,7 @@ def compose_queries(context):
         yield DynamicOutput(
             value=(query, file_config, dest_config),
             output_name="dynamic_query",
-            mapping_key=(
-                f"{query_type}_{file_config['stem']}_{file_config['suffix']}_{i}"
-            ),
+            mapping_key=(f"{query_type}_{file_stem}_{file_config['suffix']}_{i}"),
         )
 
 
